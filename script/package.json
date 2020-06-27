@@ -1,0 +1,14 @@
+{
+  "name": "script",
+  "version": "1.0.0",
+  "description": "",
+  "main": "run.js",
+  "author": "Kk Shinkai",
+  "license": "MIT",
+  "dependencies": {
+    "@iktakahiro/markdown-it-katex": "^3.1.0",
+    "front-matter": "^4.0.2",
+    "highlight.js": "^10.1.1",
+    "markdown-it": "^11.0.0"
+  }
+}
