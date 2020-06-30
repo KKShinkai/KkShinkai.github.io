@@ -1,4 +1,6 @@
 -   Unicode 规范
+    -   补充 Unicode 等价性: NFC, NFD, NFKC, NFKD 及相关概念
+    -   补充更多例子
 -   RegExp Engine
 -   TCP/IP
 -   SQL NF

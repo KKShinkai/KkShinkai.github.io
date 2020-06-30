@@ -278,6 +278,12 @@ strong, em {
     text-decoration-color: #863d86;
 }
 
+img {
+    display: block;
+    max-width: 100%;
+    overflow: auto;
+}
+
 blockquote {
     border-left: 6px solid #ffa9fb;
     color: #694769;
@@ -302,6 +308,18 @@ ul, ol {
 
 ruby > rt {
     font-size: .5rem;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th, td {
+    padding: .1em .4em;
+}
+
+table {
+    border-collapse: collapse;
 }
 
 code, pre {
