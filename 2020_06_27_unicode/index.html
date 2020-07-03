@@ -8,7 +8,7 @@
 </head>
 <body>
 <h1>Unicode 字符集与字符编码</h1>
-<div id="kkshinkai-header"><span id="kkshinkai-date">July 27, 2020</span> &middot; Kk Shinkai</div>
+<div id="kkshinkai-header"><span id="kkshinkai-date">June 27, 2020</span> &middot; Kk Shinkai</div>
 <h2>字符集的历史</h2>
 <p>计算机只能处理二进制数字, 如果要处理文本, 就必须建立字符和二进制字节序列之间的关系. ASCII (American Standard Code for Information Interchange) 编码是基于拉丁字母的一套编码系统, 也是最简单的<strong>字符集</strong> (character set), 它建立了字符和代码单元 (0 ~ 127 的整数) 之间的映射关系表. 例如 <code>0110 0001</code> (97) 对应 <code>'a'</code>, <code>0010 0100</code> (36) 对应 <code>'$'</code>, <code>0010 1000</code> (40) 对应 <code>'('</code> 等等.</p>
 <p>ASCII 字符集很容易理解, 但问题是, 它能表示的字符数量太少了, ASCII 字符集只包括基本拉丁字母, 阿拉伯数字, 英式标点符号和少许控制字符. 要处理其他语言的文字, 一个字节显然是不够的, 各个国家逐渐开始出现了自己的编码标准. 例如, 中国制定了 GB2312 标准 (中国国家标准简体中文字符集), 使用两个字节 (16-bit) 表示字符, 收录了 6763 个汉字, 还包括拉丁字母, 希腊字母, 日文平假名及片假名字母, 俄语西里尔字母在内的 682 个其他字符. 后来又出现了 GBK (K 是 “扩展” 的拼音) 和 GB18030 汉字字符集, 处理一些古汉语和罕用字. 日本 (Shift_JIS), 韩国 (Euc-kr) 等国家也都分别出现了自己的字符集. 然而, 这些字符集互相并不兼容, 甚至产生了冲突, 如何同时使用多国文字变成了一个难题.</p>

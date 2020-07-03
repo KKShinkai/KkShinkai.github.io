@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title>Rust 的背景 &middot; Kk Shinkai</title>
+    <link rel="stylesheet" href="../static/kkshinkai-v4.css">
+</head>
+<body>
+<h1>Rust 的背景</h1>
+<div id="kkshinkai-header"><span id="kkshinkai-date">July 3, 2020</span> &middot; Kk Shinkai</div>
+<blockquote>
+<p>🚧 还没有写完, 计划要写 (1) <strong>检查悬垂指针</strong>, (2) <strong>RAII, 所有权和智能指针</strong>, (3) <strong>Trait 与类型系统</strong> 和 (4) <strong>函数式程序的基础设施</strong> 这几部分. 目前进度 (1/4)</p>
+</blockquote>
+<p>很多软件系统, 包括操作系统, 驱动程序, 文件服务器和数据库, 有需要细粒度的 (fine-grained) 控制数据的表示和资源管理. 类似系统最常用的语言是 C, 但是在进行低级 (low-level) 操作时, C 默许了各式各样的危险, 如强制类型转换, 缓冲区溢位, 空指针错误和内存泄漏. 更高级的 (high-level) 的语言能避免这些弊端, 但与此同时, 它们也往往无法为程序员提供对低级系统的控制权.</p>
+<p>实际上, 我们希望有这样一门语言, 在保持对资源细粒度的控制时, 具备如下性质:</p>
+<ul>
+<li>类型系统是可靠 (sound) 的, 静态 (static) 的, 在编译期时候能够 (尽可能的) 发现型别错误, 以增进最终程序的可靠性. 并且类型系统应该尽可能的强大, 以解决静态类型语言的灵活性问题.</li>
+<li>程序永远不会解引用 (dereference) 任何悬垂指针 (dangling pointer), 解引用悬垂指针的错误会在编译期 (compile-time) 被提出, 运行时 (run-time) 既不会也不需要进行检查.</li>
+<li>语言提供操控对象布局, 放置位置和生命周期 (lifetime) 的机制. 编译器能协助程序员管理和释放内存, 可能存在内存问题时, 编译器能够及时发现并报告错误.</li>
+<li>语言本身是简单易用的, 拥有友好的错误提示, 完备的文档, 包管理器和构建工具, 良好的 (带类型推断的) 集成开发环境等等.</li>
+</ul>
+<p>总结起来便是 Rust 官网上的: Performance (高性能), Reliability (可靠性) 和 Productivity (生产力).</p>
+<h2>检查悬垂指针</h2>
+<p>在 C 中, 局部 (local) 变量总是在栈 (stack) 上分配的, 进入和离开作用域也分别代表了变量的分配和回收, 作用域结束后会, 该变量就不再存在. 在下例中,</p>
+<pre><code class="language-c"><span class="hljs-function"><span class="hljs-keyword">point_t</span> *<span class="hljs-title">run</span><span class="hljs-params">()</span> </span>{
+    <span class="hljs-keyword">point_t</span> p = {.x = <span class="hljs-number">1</span>, .y = <span class="hljs-number">2</span>}; <span class="hljs-comment">// &lt;-- &#x27;p&#x27; is valid</span>
+    do_something_with(&amp;p);
+    <span class="hljs-keyword">return</span> &amp;p; <span class="hljs-comment">// Address of stack memory associated with local variable</span>
+               <span class="hljs-comment">// &#x27;p&#x27; returned</span>
+} <span class="hljs-comment">// &lt;-- &#x27;p&#x27; is no longer valid</span>
+</code></pre>
+<p>使用 <code>malloc</code> 函数在堆 (heap) 上动态申请的内存则不受作用域影响, 直到被 <code>free</code> 函数释放 (或程序退出后由操作系统回收) 为止都会一直存在.</p>
+<pre><code class="language-c"><span class="hljs-function"><span class="hljs-keyword">point_t</span> *<span class="hljs-title">run</span><span class="hljs-params">()</span> </span>{
+    <span class="hljs-keyword">point_t</span> *p = (<span class="hljs-keyword">point_t</span> *)<span class="hljs-built_in">malloc</span>(<span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">point_t</span>)); <span class="hljs-comment">// &lt;-- &#x27;p&#x27; is valid.</span>
+    p-&gt;x = <span class="hljs-number">1</span>, p-&gt;y = <span class="hljs-number">2</span>;
+    do_something_with(p);
+    <span class="hljs-keyword">return</span> p;
+} <span class="hljs-comment">// &lt;-- point is still valid</span>
+</code></pre>
+<p>手工内存管理 (manual memory management) 非常简单易懂, 但同时也意味着程序员必须记住每个变量的生命周期, 使用之后手动释放, 并确认释放之后不再使用. 由于程序往往是很复杂的, 因此这种策略不可避免的导致了不少无效内访问和内存泄漏的问题.</p>
+<p>Cyclone 是一个 C 的 “安全 (safe)” 的方言, 在 Cyclone 里, 前一个例子中的 C 代码会被类型检查器 (type-checker) 拒绝. 编译器会追踪指针 <code>p</code> 和它指向的结构体对象的生命周期, 并发现在函数返回后, 结构体对象已经被回收, 但 <code>p</code> 仍然存活, 返回值将会成为一个悬垂指针. 这样的代码是不被允许的.</p>
+<p>Cyclone 能做到这些, 源于它使用的基于区域的 (region-based) 内存管理策略. Cyclone 会给每个对象分配一个与其生命周期相符的区域 (region) 标识符, 每个指针类型也包含一个区域标识符, 当指针要指向一个对象时, Cyclone 会检查二者的区域是否是相容的.</p>
+<pre><code class="language-cpp"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">f</span><span class="hljs-params">()</span> </span>{
+    <span class="hljs-keyword">int</span> x = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">int</span> *@region(`f) y = &amp;x; <span class="hljs-comment">// &lt;-- `f 为函数 f 的区域标识符</span>
+    L : {
+        <span class="hljs-keyword">int</span> a = <span class="hljs-number">0</span>;
+        y = &amp;a; <span class="hljs-comment">// &lt;-- &amp;a 的类型为 int *@region(`L), 由编译器推断</span>
+    }
+    <span class="hljs-keyword">return</span> *y;
+}
+</code></pre>
+<p>这段代码会被 Cyclone 的编译器拒绝, 因为对象 <code>a</code> 生存于区域 <code>`L</code> 中, 这个区域比 <code>y</code> 所在的区域 <code>`f</code> 要小, 如果允许 <code>y</code> 指向 <code>a</code>, 那么对 <code>y</code> 解引用就可能会造成悬垂指针错误. 顺便一提, Cyclone 中的区域标识符是指针类型的一部分, 编译器自动推断, 无需像上文的例子中那样显式注明.</p>
+<p>区域系统 (region system) 还有另外一个重要的设施: LIFO 区域. 它支持和栈类似的 LIFO (last-in-first-out) 生命周期系统, 变量的生命和词法作用域相吻合, 但同时还允许动态分配内存.</p>
+<pre><code class="language-cpp">{   region&lt;`r&gt; h;
+    ...
+}
+</code></pre>
+<p>上例的语法声明了一个区域 <code>`r</code>, 并定义了一个区域句柄 (region handle) <code>h</code>, <code>rmalloc</code> 和 <code>rnew</code> 可以使用该句柄动态的分配内存.</p>
+<pre><code class="language-cpp"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">k</span><span class="hljs-params">(<span class="hljs-keyword">int</span> n)</span> </span>{
+    <span class="hljs-keyword">int</span> result;
+    {   region&lt;`r&gt; h;
+        <span class="hljs-keyword">int</span> ?arr = rnew(h) { <span class="hljs-keyword">for</span> i &lt; n : i };
+        result = process(h, arr);
+    }
+    <span class="hljs-keyword">return</span> result;
+}
+</code></pre>
+<p>当 LIFO 区域 <code>`r</code> 结束时, 使用句柄 <code>h</code> 分配的内存也随之被回收, 这样便无需手动释放, 也不会造成内存泄漏. 事实上, Cyclone 比 C 多了一类内存区域, Cyclone 的内存区域有三种 :</p>
+<ul>
+<li>栈区域 (stack region) : 局部定义变量的生命周期和词法作用域相吻合, 与 C 语言完全相同.</li>
+<li>堆区域 (heap region) : 永久区域 <code>`H</code>, 只能使用 <code>malloc</code> 或 <code>new</code> 在其上分配空间, 但不能释放, 没有 C 语言中 <code>free</code> 函数的类似物.</li>
+<li>动态区域 (dynamic region) : 临时区域, 使用 <code>rmalloc</code> 或 <code>rnew</code> 调用区域句柄来分配空间, 无需手动释放, 区域结束后内存自动回收.</li>
+</ul>
+<p>到此为止, 我们已经大略的了解了 Cyclone 的指针追踪机制, 实际上, 它很像一种协变的泛型 (长周期被视为短周期的子类型) , 借助类型推断和静态检查, Cyclone 能够在编译期发现并预防悬垂指针的错误. 在 Rust 中我们也能看见 Cyclone 的影子, 在如下的例子中 :</p>
+<pre><code class="language-rust"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">RefPoint</span></span> {
+    x: &amp;<span class="hljs-built_in">i32</span>,
+    y: &amp;<span class="hljs-built_in">i32</span>,
+}
+
+<span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">main</span></span>() {
+    <span class="hljs-keyword">let</span> (a, b) = (&amp;<span class="hljs-number">1</span>, &amp;<span class="hljs-number">2</span>);
+    <span class="hljs-keyword">let</span> p = RefPoint { x: a, y: b };
+
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;({}, {})&quot;</span>, p.x, p.y);
+}
+</code></pre>
+<p>编译器会提醒你 :</p>
+<pre><code>error[E0106]: missing lifetime specifier
+ --&gt; src/main.rs:2:8
+  |
+2 |     x: &amp;i32,
+  |        ^ expected named lifetime parameter
+</code></pre>
+<p>因为引用 <code>x</code> 和 <code>y</code> 指向了 <code>main</code> 函数的作用域, 在声明结构体 <code>let p = RefPoint { x, y }</code> 时, 必须要确保 <code>a</code> 和 <code>b</code> 比 <code>p</code> 活的更久, 否则一旦 <code>a</code> 和 <code>b</code> 提前被释放, <code>x</code> 和 <code>y</code> 就变成了悬垂指针.</p>
+<p>为其增加生命周期标记, 编译器就会自动帮我们推断和对比变量的存活时间了.</p>
+<pre><code class="language-rust"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">RefPoint</span></span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt; {
+    x: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-built_in">i32</span>,
+    y: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-built_in">i32</span>,
+}
+</code></pre>
+<p>另外, 独占型 (unique) 智能指针和引用计数型 (reference-counted) 智能指针在 Cyclone 中也有相当广泛的应用, 但由于几乎没有人熟悉这门语言, 因此我会在后文中不再以它为例.</p>
+<p>(未完)</p>
+<!-- ## RAII
+
+RAII 是 C++ 的设计者 Bjarne Stroustrup 提出的概念, 全称是 Resource Acquisition is Initialization, 译为资源获取即初始化. 资源的使用一般分为三个过程: 获取, 使用和销毁. -->
+<h2>参考资料</h2>
+<ul>
+<li><a href="http://www.cs.umd.edu/projects/cyclone/papers/cyclone-safety.pdf">Cyclone: A safe dialect of C</a></li>
+<li><a href="http://www.cs.umd.edu/~mwh/papers/cyclone-cuj.pdf">Cyclone: A Type-Safe Dialect of C</a></li>
+<li><a href="http://www.cs.umd.edu/~mwh/papers/ismm.pdf">Experience With Safe Manual Memory-Management in Cyclone</a></li>
+<li><a href="http://cyclone.thelanguage.org/wiki/Introduction%20to%20Regions/">Introduction to Regions - Cyclone</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Memory_management#Dynamic_memory_allocation">Memory management - Wikipedia</a></li>
+<li><a href="https://en.cppreference.com/w/cpp/language/raii">RAII - cppreference.com</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Region-based_memory_management">Region-based memory management - Wikipedia</a></li>
+<li><a href="http://www.cs.utah.edu/~regehr/reading/open_papers/cyclone_regions.pdf">Region-Based Memory Management in Cyclone</a></li>
+<li><a href="http://www.cs.umd.edu/projects/PL/cyclone/scp.pdf">Safe Manual Memory Management in Cyclone</a></li>
+<li><a href="https://people.mpi-sws.org/~dreyer/papers/safe-sysprog-rust/paper.pdf">Safe Systems Programming in Rust: The Promise and the Challenge</a></li>
+<li><a href="https://doc.rust-lang.org/book/">The Rust Programming Language</a></li>
+</ul>
+
+</body>
+</html>
