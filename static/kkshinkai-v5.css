@@ -211,6 +211,10 @@ template {
 }
 
 /* Kk Shinkai Style */
+mjx-container {
+    outline: none !important;
+}
+
 * {
     box-sizing:border-box
 }
@@ -218,16 +222,14 @@ template {
 html {
     min-width: 100%;
     text-rendering: optimizelegibility;
-    hyphens: auto;
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.732rem;
 }
 
 body {
     font-family: Iosevka,-apple-system,BlinkMacSystemFont,Helvetica Neue,PingFang SC,Microsoft YaHei,Source Han Sans SC,Noto Sans CJK SC,WenQuanYi Micro Hei,sans-serif;
-    max-width: 95%;
-    max-width: 37rem;
-    padding: .8em;
+    max-width: 55rem;
+    padding: .8em .8em 18em .8em;
     margin: auto;
 }
 
@@ -330,7 +332,6 @@ code, pre {
     word-spacing: normal;
     word-break: normal;
     word-wrap: normal;
-    line-height: 1.5;
     -moz-tab-size: 4;
     -o-tab-size: 4;
     tab-size: 4;
@@ -338,10 +339,6 @@ code, pre {
     -moz-hyphens: none;
     -ms-hyphens: none;
     hyphens: none
-}
-
-svg {
-    font-size: .86em !important;
 }
 
 :not(pre)>code {

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title>线性代数 (1) : 线性方程组 &middot; Kk Shinkai</title>
+    <link rel="stylesheet" href="../static/kkshinkai-v5.css">
+    <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+<h1>线性代数 (1) : 线性方程组</h1>
+<div id="kkshinkai-header"><span id="kkshinkai-date">August 22, 2020</span> &middot; Kk Shinkai</div>
+<h2>1.1. 线性方程组</h2>
+<p>包含变量 \(x_1,x_2,\dots,x_n\) 的<strong>线性方程</strong>是形如</p>
+<p>\[a_1x_1+a_2x_2+\cdots+a_nx_n=b\]</p>
+<p>的方程. 其中 \(b\) 与<strong>系数</strong> \(a_1,a_2,\dots,a_n\) 是已知实数或复数, \(n\) 为任意正整数.</p>
+<p><strong>线性方程组</strong>由一个或几个包含相同变量 \(x_1,x_2,\dots,x_n\) 的线性方程组成. 线性方程组的<strong>解</strong>是一组数 \((s_1,s_2,\dots,s_n)\), 用这组数分别替代 \(x_1,x_2,\dots,x_n\) 时方程两侧都相等. 方程组所有可能的解的集合称为线性方程组的<strong>解集</strong>. 若两个线性方程组具有相同的解集, 则称它们是<strong>等价的</strong>.</p>
+<p>我们称一个线性方程组是<strong>相容的</strong>, 若它有一或无穷多解; 称它是<strong>不相容的</strong>, 若它无解.</p>
+<h3>1.1.1. 矩阵记号</h3>
+<p>一个线性方程组可以用被称为<strong>矩阵</strong>的矩形阵列来表示, 如下的方程组</p>
+<p>\[\begin{array}{r}
+ x_1 &amp; -2x_2 &amp;  +x_3 &amp;=&amp;  0 \\
+     &amp;  2x_2 &amp; -8x_3 &amp;=&amp;  8 \\
+5x_1 &amp;       &amp; -5x_3 &amp;=&amp; 10 \\
+\end{array}\]</p>
+<p>其系数可以放在如下的矩阵中</p>
+<p>\[\begin{bmatrix}
+1 &amp; -2 &amp;  1 \\
+0 &amp;  2 &amp; -8 \\
+5 &amp;  0 &amp; -5
+\end{bmatrix}\]</p>
+<p>被称为<strong>系数矩阵</strong>, 而</p>
+<p>\[\begin{bmatrix}
+1 &amp; -2 &amp;  1 &amp;  0 \\
+0 &amp;  2 &amp; -8 &amp;  8 \\
+5 &amp;  0 &amp; -5 &amp; 10
+\end{bmatrix}\]</p>
+<p>则被称为<strong>增广矩阵</strong>, 即在系数矩阵上增加一列常数项.</p>
+<p>矩阵的<strong>维数</strong>说明其包含的行数和列数, \(m\times n\) 矩阵是一个有 \(m\) 行 \(n\) 列数的矩形阵列.</p>
+<h3>1.1.3. 一个解线性方程组的例子</h3>
+<p>我们以上述方程组为例, 展示解一个线性方程组的过程.</p>
+<p>\[\begin{array}{r}
+ x_1 &amp; -2x_2 &amp;  +x_3 &amp;=&amp;  0 \\
+     &amp;  2x_2 &amp; -8x_3 &amp;=&amp;  8 \\
+5x_1 &amp;       &amp; -5x_3 &amp;=&amp; 10 \\
+\end{array}\]</p>
+<ul>
+<li>
+<p>保留第 1 个方程中的 \(x_1\), 并用第一个方程的倍数消去其他行中的 \(x_1\).</p>
+<p>\[\begin{array}{r}
+  x_1 &amp; -2x_2 &amp;   +x_3 &amp;=&amp;  0 \\
+      &amp;  2x_2 &amp;  -8x_3 &amp;=&amp;  8 \\
+      &amp; 10x_2 &amp; -10x_3 &amp;=&amp; 10 \\
+  \end{array}\]</p>
+</li>
+<li>
+<p>第 2 个方程与 \(\dfrac{1}{2}\) 作积, 将 \(x_2\) 系数化为 \(1\).</p>
+<p>\[\begin{array}{r}
+  x_1 &amp; -2x_2 &amp;   +x_3 &amp;=&amp;  0 \\
+      &amp;   x_2 &amp;  -4x_3 &amp;=&amp;  4 \\
+      &amp; 10x_2 &amp; -10x_3 &amp;=&amp; 10 \\
+  \end{array}\]</p>
+</li>
+<li>
+<p>保留第 2 个方程中的 \(x_2\), 并用第一个方程的倍数消去随后行中的 \(x_2\).</p>
+<p>\[\begin{array}{r}
+  x_1 &amp; -2x_2 &amp;   +x_3 &amp;=&amp;  0 \\
+      &amp;   x_2 &amp;  -4x_3 &amp;=&amp;  4 \\
+      &amp;       &amp; -30x_3 &amp;=&amp; 30 \\
+  \end{array}\]</p>
+</li>
+<li>
+<p>第 3 个方程与 \(\dfrac{1}{30}\) 作积, 将 \(x_3\) 系数化为 \(1\).</p>
+<p>\[\begin{array}{r}
+  x_1 &amp; -2x_2 &amp;   +x_3 &amp;=&amp;  0 \\
+      &amp;   x_2 &amp;  -4x_3 &amp;=&amp;  4 \\
+      &amp;       &amp;    x_3 &amp;=&amp; -1 \\
+  \end{array}\]</p>
+</li>
+</ul>
+<p>至此, 方程组的系数化为了一个 “上三角形”, 并有 \(x_3\) 得解.</p>
+<ul>
+<li>将 \(x_3\) 代入并消去其他方程中的 \(x_3\).</li>
+</ul>
+<p>\[\begin{array}{r}
+x_1 &amp; -2x_2 &amp;     &amp;=&amp;  1 \\
+    &amp;   x_2 &amp;     &amp;=&amp;  0 \\
+    &amp;       &amp; x_3 &amp;=&amp; -1 \\
+\end{array}\]</p>
+<ul>
+<li>
+<p>将 \(x_2\) 代入并消去其前方程中的 \(x_2\).</p>
+<p>\[\begin{array}{r}
+  x_1 &amp;     &amp;     &amp;=&amp;  1 \\
+      &amp; x_2 &amp;     &amp;=&amp;  0 \\
+      &amp;     &amp; x_3 &amp;=&amp; -1 \\
+  \end{array}\]</p>
+</li>
+</ul>
+<p>因此原方程的解为 \((1,0,-1)\).</p>
+<h3>1.1.3. 初等行变换</h3>
+<p>解多元方程组的惯用手法是对其中的方程的倍数作和或差, 保证方程解不变的同时消除变量, 获得仅含一个变量的方程, 再代入逐步求解. 这个过程可以用增广矩阵变换来描述, 如下的三种变换被称为<strong>初等行变换</strong>, 它们和上边例子中的操作是等价的, 不会改变方程的解.</p>
+<ol>
+<li>(倍加变换) 把某一行换成它本身与另一行倍数的和;</li>
+<li>(对换变换) 把两行对换;</li>
+<li>(倍乘变换) 把某一行的所有元素乘以同一个非零数;</li>
+</ol>
+<p>如果一个矩阵可由另一个矩阵经初等行变换得到, 则称它们是<strong>行等价的</strong>.</p>
+<p>若两个线性方程组的增广矩阵是行等价的, 则它们具有相同的解集.</p>
+<h2>1.2. 阶梯形矩阵</h2>
+<p>在上一节中我们已经发现, “三角形” 的系数矩阵能够为解线性方程提供非常有用的性质, 下面我们更进一步的去探讨 “三角形矩阵” 的确切定义.</p>
+<h3>1.2.1. 阶梯形矩阵</h3>
+<p>一个矩阵称为<strong>阶梯形</strong> (或<strong>行阶梯形</strong>), 若它具有如下性质</p>
+<ol>
+<li>每一非零行都在每一零行之上;</li>
+<li>某一行的先导元素 (即首个非零元素) 所在的列位于前一行先导元素的右边;</li>
+<li>某一先导元素所在列下方元素都是零;</li>
+</ol>
+<p>若一个阶梯形矩阵还满足如下性质, 则称它为<strong>简化阶梯形</strong> (或<strong>行简化阶梯形</strong>)</p>
+<ol start="4">
+<li>每一非零行的先导元素是 \(1\);</li>
+<li>每一先导元素 \(1\) 是该元素所在列的唯一非零元素;</li>
+</ol>
+<p>例如, 如果用 \(\blacksquare\) 表示先导元素, \(\ast\) 表示可以取任意值, 则下列矩阵是阶梯形的</p>
+<p>\[\begin{bmatrix}
+\blacksquare &amp;         \ast &amp; \ast &amp; \ast \\
+0            &amp; \blacksquare &amp; \ast &amp; \ast \\
+0            &amp; 0            &amp; 0    &amp; 0    \\
+0            &amp; 0            &amp; 0    &amp; 0
+\end{bmatrix}\qquad
+\begin{bmatrix}
+0 &amp; \blacksquare &amp; \ast &amp; \ast         &amp; \ast         &amp; \ast         &amp; \ast &amp; \ast &amp; \ast         &amp; \ast \\
+0 &amp; 0            &amp; 0    &amp; \blacksquare &amp; \ast         &amp; \ast         &amp; \ast &amp; \ast &amp; \ast         &amp; \ast \\
+0 &amp; 0            &amp; 0    &amp; 0            &amp; \blacksquare &amp; \ast         &amp; \ast &amp; \ast &amp; \ast         &amp; \ast \\
+0 &amp; 0            &amp; 0    &amp; 0            &amp; 0            &amp; \blacksquare &amp; \ast &amp; \ast &amp; \ast         &amp; \ast \\
+0 &amp; 0            &amp; 0    &amp; 0            &amp; 0            &amp; 0            &amp; 0    &amp; 0    &amp; \blacksquare &amp; \ast \\
+\end{bmatrix}\]</p>
+<p>下列矩阵则是简化阶梯形的</p>
+<p>\[\begin{bmatrix}
+1 &amp; 0 &amp; \ast &amp; \ast \\
+0 &amp; 1 &amp; \ast &amp; \ast \\
+0 &amp; 0 &amp; 0    &amp; 0    \\
+0 &amp; 0 &amp; 0    &amp; 0
+\end{bmatrix}\qquad
+\begin{bmatrix}
+0 &amp; 1 &amp; \ast &amp; 0 &amp; 0 &amp; 0 &amp; \ast &amp; \ast &amp; 0 &amp; \ast \\
+0 &amp; 0 &amp; 0    &amp; 1 &amp; 0 &amp; 0 &amp; \ast &amp; \ast &amp; 0 &amp; \ast \\
+0 &amp; 0 &amp; 0    &amp; 0 &amp; 1 &amp; 0 &amp; \ast &amp; \ast &amp; 0 &amp; \ast \\
+0 &amp; 0 &amp; 0    &amp; 0 &amp; 0 &amp; 1 &amp; \ast &amp; \ast &amp; 0 &amp; \ast \\
+0 &amp; 0 &amp; 0    &amp; 0 &amp; 0 &amp; 0 &amp; 0    &amp; 0    &amp; 1 &amp; \ast \\
+\end{bmatrix}\]</p>
+<p>任何矩阵都可以通过行化简 (即初等变换) 变为阶梯矩阵, 且阶梯矩阵可能有多个, 但能且只能化为唯一的最简阶梯矩阵.</p>
+<h3>1.2.2. 主元位置</h3>
+<p>在上例中, \(\blacksquare\) 和 \(1\) 出现的位置是相同的, 也就是说, 在阶梯形矩阵化为最简阶梯形时, 每行的先导元素总在相同的位置上. 称矩阵中的<strong>主元位置</strong>是对应于它的阶梯形中先导元素的位置, <strong>主元列</strong>是含有主元位的列. 也就是上例中先导元素 \(1\) (或 \(\blacksquare\)) 出现的位置和它们所在的列.</p>
+<h3>1.2.3. 行化简算法</h3>
+<p>下列算法包括五个步骤, 我们以如下矩阵为例, 先将它化为阶梯形, 再化为最简阶梯形.</p>
+<p>\[\begin{bmatrix}
+0 &amp;  3 &amp; -6 &amp;  6 &amp; 4 &amp; -5 \\
+3 &amp; -7 &amp;  8 &amp; -5 &amp; 8 &amp;  9 \\
+3 &amp; -9 &amp; 12 &amp; -9 &amp; 6 &amp; 15
+\end{bmatrix}\]</p>
+<ul>
+<li>
+<p>第一步, 由最左的非零列开始, 这是一个主元列, 主元位置在该列顶端.</p>
+<p>\[\begin{bmatrix}
+  \mathbf{0} &amp;  3 &amp; -6 &amp;  6 &amp; 4 &amp; -5 \\
+  \mathbf{3} &amp; -7 &amp;  8 &amp; -5 &amp; 8 &amp;  9 \\
+  \mathbf{3} &amp; -9 &amp; 12 &amp; -9 &amp; 6 &amp; 15
+  \end{bmatrix}\]</p>
+</li>
+<li>
+<p>第二步, 在主元列中选择一个非零元素作为主元, 若有必要的话, 对换两行使这个元素移动到主元位置上.</p>
+<p>\[\begin{bmatrix}
+  \mathbf{3} &amp; -9 &amp; 12 &amp; -9 &amp; 6 &amp; 15 \\
+  3          &amp; -7 &amp;  8 &amp; -5 &amp; 8 &amp;  9 \\
+  0          &amp;  3 &amp; -6 &amp;  6 &amp; 4 &amp; -5
+  \end{bmatrix}\]</p>
+</li>
+<li>
+<p>第三步, 用倍加行变换将主元下面的元素变为 \(0\).</p>
+<p>\[\begin{bmatrix}
+  \mathbf{3} &amp; -9 &amp; 12 &amp; -9 &amp; 6 &amp; 15 \\
+  0          &amp;  2 &amp; -4 &amp;  4 &amp; 2 &amp; -6 \\
+  0          &amp;  3 &amp; -6 &amp;  6 &amp; 4 &amp; -5
+  \end{bmatrix}\]</p>
+</li>
+<li>
+<p>第四步, 暂时忽略包含主元位置的行以及它上面的各行, 对剩下的子矩阵使用上述的三个步骤直到没有非零行需要处理为止.</p>
+<p>\[\begin{bmatrix}
+  \color{gray}{3} &amp; \color{gray}{-9} &amp; \color{gray}{12} &amp; \color{gray}{-9} &amp; \color{gray}{6} &amp; \color{gray}{15} \\
+  0               &amp; \mathbf{2}       &amp; -4 &amp;  4 &amp; 2 &amp; -6   \\
+  0               &amp; \mathbf{3}       &amp; -6 &amp;  6 &amp; 4 &amp; -5
+  \end{bmatrix}\]</p>
+<p>得到</p>
+<p>\[\begin{bmatrix}
+  \color{gray}{3} &amp; \color{gray}{-9} &amp; \color{gray}{12} &amp; \color{gray}{-9} &amp; \color{gray}{6} &amp; \color{gray}{15} \\
+  0               &amp; \mathbf{2}       &amp; -4 &amp;  4 &amp; 2 &amp; -6   \\
+  0               &amp; 0                &amp;  0 &amp;  0 &amp; 1 &amp;  4
+  \end{bmatrix}\]</p>
+<p>再求其子矩阵</p>
+<p>\[\begin{bmatrix}
+  \color{gray}{3} &amp; \color{gray}{-9} &amp; \color{gray}{12} &amp; \color{gray}{-9} &amp; \color{gray}{6} &amp; \color{gray}{15} \\
+  \color{gray}{0} &amp; \color{gray}{2} &amp; \color{gray}{-4}
+   &amp; \color{gray}{4} &amp; \color{gray}{2} &amp; \color{gray}{-6} \\
+  0 &amp; 0 &amp; 0 &amp; 0 &amp; \mathbf{1} &amp; 4
+  \end{bmatrix}\]</p>
+</li>
+<li>
+<p>第五步, 由最右边的主元开始, 把每个主元上方的各元素变为 \(0\), 若某个主元不是 \(1\), 用倍乘变换将其变为 \(1\).</p>
+</li>
+</ul>
+<h3>1.2.4. 线性方程组的解</h3>
+<p>假设某个线性方程组的增广矩阵已经化为等价的简化阶梯形</p>
+<p>\[\begin{bmatrix}
+1 &amp; 0 &amp; -5 &amp; 1 \\
+0 &amp; 1 &amp;  1 &amp; 4 \\
+0 &amp; 0 &amp;  0 &amp; 0
+\end{bmatrix}\]</p>
+<p>它对应的方程组是</p>
+<p>\[\begin{array}{r}
+x_1 &amp;     &amp; -5x_3 &amp;=&amp; 1 \\
+    &amp; x_2 &amp;  +x_3 &amp;=&amp; 4 \\
+    &amp;     &amp;     0 &amp;=&amp; 0
+\end{array}\]</p>
+<p>对应于主元列的变量 \(x_1\) 和 \(x_2\) 称为<strong>基本变量</strong>, 而其他变量 (如 \(x_3\)) 被称为<strong>自由变量</strong>.</p>
+<p>\[\begin{cases}
+x_1=1+5x_3 \\
+x_2=4-x_3 \\
+x_3 \text{ is free variable}
+\end{cases}\]</p>
+<p>说 \(x_3\) 是自由变量, 指它可以取任意的值, 当 \(x_3\) 的值选定后, 其他方程就可以确定基本变量 \(x_1\) 和 \(x_2\) 的值. \(x_3\) 的方程确定方程组不同的解, 上式被称为方程组的<strong>通解</strong>, 而自由变量 \(x_3\) 则被称为解集的参数.</p>
+<h3>1.2.5. 存在与唯一性问题</h3>
+<p>(<strong>存在性与唯一性定理</strong>) 线性方程组相容的充要条件是增广矩阵的最右列不是主元列. 也就是说, 增广矩阵的阶梯形没有形如</p>
+<p>\[\begin{bmatrix}0&amp;\cdots&amp;0&amp;b\end{bmatrix}\]</p>
+<p>的行. 若线性方程组相容, 则它的解集可能有两种情形: 当没有自由变量时, 有唯一解; 若至少有一个自由变量, 则有无穷多解.</p>
+<p>通俗来讲, 如果最右列是主元列, 并有主元 \(b\neq 0\), 则方程组中必然会出现 \(0=b\) 这样的方程, 这是矛盾的, 因此方程无解.</p>
+
+</body>
+</html>

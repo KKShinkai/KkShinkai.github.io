@@ -189,7 +189,7 @@ create table utf8mb4_table (
 )  default charset utf8mb4;
 ```
 
-## 推荐阅读
+## 参考资料
 
 -   [Unicode 13.0.0 Core Specification](https://unicode.org/versions/Unicode13.0.0/)
 -   [Unicode surrogate programming with the Java language](https://www.ibm.com/developerworks/library/j-unicode/)
