@@ -4,7 +4,7 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     <title>Unicode 字符集与字符编码 &middot; Kk Shinkai</title>
-    <link rel="stylesheet" href="../static/kkshinkai-v5.css">
+    <link rel="stylesheet" href="../static/kkshinkai-v6.css">
     <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
@@ -102,7 +102,7 @@ str;                              <span class="hljs-comment">// &quot;ÅB&quot;
 <li>低 10-bit (0 ~ 3FF<sub>16</sub>) 和 DC00<sub>16</sub> 作和, 得到第二个码元, 称为<strong>低位代理</strong> (low surrogate), 也叫<strong>后尾代理</strong> (trail surrogates), 值的范围为 DC00<sub>16</sub> ~ DFFF<sub>16</sub>.</li>
 </ol>
 <p>前导代理, 后尾代理, 和 BMP 中有效字符的码位互不重叠, 因此搜索程序的实现是简单的. 一个字符编码的一部分不可能与另一个字符编码的不同部分相重叠, 我们称之为<strong>自同步的</strong> (self-synchronizing), 可以通过仅检查一个码元来判定给定字符的下一个字符的起始码元.</p>
-<p>Java 中的字符串是 UTF-16 编码的, 这和 Java 早期选择的 UCS-2 编码有关, UCS-2 是一个定长编码, 当后来 UCS-2 无法表示 Unicode 字符时, 过渡到了兼容它的 UTF-16 成为了 Java 最自然的选择. 不过, 这同时也造成了 Java <code>String</code> 类的部分方法无法正确的处理变长编码. 在 Java 中, <code>char</code> (<code>Character</code>) 类是一个 UTF-16 码元, 随机访问字符串所得到的自然也是码元, 是无意义的. 正确遍历 Java 字符串的方法是 :</p>
+<p>Java 中的字符串是 UTF-16 编码的, 这和 Java 早期选择的 UCS-2 编码有关, UCS-2 是一个定长编码, 当后来 UCS-2 无法表示 Unicode 字符时, 过渡到了兼容它的 UTF-16 成为了 Java 最自然的选择. 不过, 这同时也造成了 Java <code>String</code> 类的部分方法无法正确的处理变长编码. 在 Java 中, <code>char</code> (及对应包装类 <code>Character</code>) 类是一个 UTF-16 码元, 随机访问字符串所得到的自然也是码元, 是无意义的. 正确遍历 Java 字符串的方法是 :</p>
 <pre><code class="language-java"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; str.length();) {
     <span class="hljs-keyword">int</span> c = str.codePointAt(i);
     System.out.println(c);
@@ -112,7 +112,7 @@ str;                              <span class="hljs-comment">// &quot;ÅB&quot;
 <p>显然, Java 字符串的 <code>.length()</code> 方法返回的结果也不是码元数量, 而是码点数量. 很多较老的语言都有类似的问题, 它们无法很好的处理 BMP 平面以外的字符.</p>
 <h2>UTF-8</h2>
 <p>UTF-8 和 UTF-16 一样, 也是一种不定长编码形式, 它的码元更短, 为 8-bit, 使用 1 ~ 4 个码元来表示一个码点.</p>
-<p>UTF-8 的具体编码算法十分简单, 按照下表将其比特序列顺次填入 <span style="color: purple">X</span> 所代表的空位即可.</p>
+<p>UTF-8 的具体编码算法十分简单, 按照下表将其比特序列顺次填入 <code><span style="color: #ff7554">X</span></code> 所代表的空位即可.</p>
 <table>
 <thead>
 <tr>
@@ -126,36 +126,36 @@ str;                              <span class="hljs-comment">// &quot;ÅB&quot;
 </thead>
 <tbody>
 <tr>
-<td style="text-align:right">U+0000</td>
-<td style="text-align:right">U+007F</td>
-<td>0<span style="color: purple">XXXXXXX</span></td>
+<td style="text-align:right"><code>U+0000</code></td>
+<td style="text-align:right"><code>U+007F</code></td>
+<td><code>0<span style="color: #ff7554">XXXXXXX</span></code></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td style="text-align:right">U+0080</td>
-<td style="text-align:right">U+07FF</td>
-<td>110<span style="color: purple">XXXXX</span></td>
-<td>10<span style="color: purple">XXXXXX</span></td>
+<td style="text-align:right"><code>U+0080</code></td>
+<td style="text-align:right"><code>U+07FF</code></td>
+<td><code>110<span style="color: #ff7554">XXXXX</span></code></td>
+<td><code>10<span style="color: #ff7554">XXXXXX</span></code></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td style="text-align:right">U+0800</td>
-<td style="text-align:right">U+FFFF</td>
-<td>1110<span style="color: purple">XXXX</span></td>
-<td>10<span style="color: purple">XXXXXX</span></td>
-<td>10<span style="color: purple">XXXXXX</span></td>
+<td style="text-align:right"><code>U+0800</code></td>
+<td style="text-align:right"><code>U+FFFF</code></td>
+<td><code>1110<span style="color: #ff7554">XXXX</span></code></td>
+<td><code>10<span style="color: #ff7554">XXXXXX</span></code></td>
+<td><code>10<span style="color: #ff7554">XXXXXX</span></code></td>
 <td></td>
 </tr>
 <tr>
-<td style="text-align:right">U+10000</td>
-<td style="text-align:right">U+10FFFF</td>
-<td>11110<span style="color: purple">XXX</span></td>
-<td>10<span style="color: purple">XXXXXX</span></td>
-<td>10<span style="color: purple">XXXXXX</span></td>
-<td>10<span style="color: purple">XXXXXX</span></td>
+<td style="text-align:right"><code>U+10000</code></td>
+<td style="text-align:right"><code>U+10FFFF</code></td>
+<td><code>11110<span style="color: #ff7554">XXX</span></code></td>
+<td><code>10<span style="color: #ff7554">XXXXXX</span></code></td>
+<td><code>10<span style="color: #ff7554">XXXXXX</span></code></td>
+<td><code>10<span style="color: #ff7554">XXXXXX</span></code></td>
 </tr>
 </tbody>
 </table>

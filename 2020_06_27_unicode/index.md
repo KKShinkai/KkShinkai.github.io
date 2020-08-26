@@ -143,7 +143,7 @@ BMP 平面上的码点 (U+0000 ~ U+D7FF 及 U+E000 ~ U+FFFF, 不包括代理区)
 
 前导代理, 后尾代理, 和 BMP 中有效字符的码位互不重叠, 因此搜索程序的实现是简单的. 一个字符编码的一部分不可能与另一个字符编码的不同部分相重叠, 我们称之为**自同步的** (self-synchronizing), 可以通过仅检查一个码元来判定给定字符的下一个字符的起始码元.
 
-Java 中的字符串是 UTF-16 编码的, 这和 Java 早期选择的 UCS-2 编码有关, UCS-2 是一个定长编码, 当后来 UCS-2 无法表示 Unicode 字符时, 过渡到了兼容它的 UTF-16 成为了 Java 最自然的选择. 不过, 这同时也造成了 Java `String` 类的部分方法无法正确的处理变长编码. 在 Java 中, `char` (`Character`) 类是一个 UTF-16 码元, 随机访问字符串所得到的自然也是码元, 是无意义的. 正确遍历 Java 字符串的方法是 :
+Java 中的字符串是 UTF-16 编码的, 这和 Java 早期选择的 UCS-2 编码有关, UCS-2 是一个定长编码, 当后来 UCS-2 无法表示 Unicode 字符时, 过渡到了兼容它的 UTF-16 成为了 Java 最自然的选择. 不过, 这同时也造成了 Java `String` 类的部分方法无法正确的处理变长编码. 在 Java 中, `char` (及对应包装类 `Character`) 类是一个 UTF-16 码元, 随机访问字符串所得到的自然也是码元, 是无意义的. 正确遍历 Java 字符串的方法是 :
 
 ```java
 for (int i = 0; i < str.length();) {
@@ -159,14 +159,14 @@ for (int i = 0; i < str.length();) {
 
 UTF-8 和 UTF-16 一样, 也是一种不定长编码形式, 它的码元更短, 为 8-bit, 使用 1 ~ 4 个码元来表示一个码点.
 
-UTF-8 的具体编码算法十分简单, 按照下表将其比特序列顺次填入 <span style="color: purple">X</span> 所代表的空位即可.
+UTF-8 的具体编码算法十分简单, 按照下表将其比特序列顺次填入 <code><span style="color: #ff7554">X</span></code> 所代表的空位即可.
 
 | 码点起值 | 码点终值 |   Byte 1 |   Byte 2 |   Byte 3 |   Byte 4 |
 |---------:|---------:|----------|----------|----------|----------|
-|   U+0000 |   U+007F | 0<span style="color: purple">XXXXXXX</span> ||||
-|   U+0080 |   U+07FF | 110<span style="color: purple">XXXXX</span> | 10<span style="color: purple">XXXXXX</span> |||
-|   U+0800 |   U+FFFF | 1110<span style="color: purple">XXXX</span> | 10<span style="color: purple">XXXXXX</span> | 10<span style="color: purple">XXXXXX</span> ||
-|  U+10000 | U+10FFFF | 11110<span style="color: purple">XXX</span> | 10<span style="color: purple">XXXXXX</span> | 10<span style="color: purple">XXXXXX</span> | 10<span style="color: purple">XXXXXX</span> |
+| `U+0000` | `U+007F` | <code>0<span style="color: #ff7554">XXXXXXX</span></code> ||||
+| `U+0080` | `U+07FF` | <code>110<span style="color: #ff7554">XXXXX</span></code> | <code>10<span style="color: #ff7554">XXXXXX</span></code> |||
+| `U+0800` | `U+FFFF` | <code>1110<span style="color: #ff7554">XXXX</span></code> | <code>10<span style="color: #ff7554">XXXXXX</span></code> | <code>10<span style="color: #ff7554">XXXXXX</span></code> ||
+|`U+10000` | `U+10FFFF` | <code>11110<span style="color: #ff7554">XXX</span></code> | <code>10<span style="color: #ff7554">XXXXXX</span></code> | <code>10<span style="color: #ff7554">XXXXXX</span></code> | <code>10<span style="color: #ff7554">XXXXXX</span></code> |
 
 ASCII 是 UTF-8 的一个子集, ASCII 字符串也同时是 UTF-8 字符串, 不需要转换.
 
