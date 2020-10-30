@@ -3,7 +3,7 @@ src = $(wildcard */index.md)
 all : $(src:.md=.html)
 
 $(src:.md=.html) : %.html : %.md
-	node ./script/run.js $< $@
+	node --no-warnings ./static/script/build.mjs $< $@
 
 clean :
 	-rm $(src:.md=.html)

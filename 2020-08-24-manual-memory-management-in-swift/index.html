@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <meta charset="UTF-8">
     <title>在 Swift 中手动管理内存 &middot; Kk Shinkai</title>
-    <link rel="stylesheet" href="../static/kkshinkai-v6.css">
-    <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+    <link rel="manifest" href="../site.webmanifest">
+    <link rel="stylesheet" href="../static/css/normalize-v8.0.1.css">
+    <link rel="stylesheet" href="../static/css/kkshinkai-common-v1.0.0.css">
+    <link rel="stylesheet" href="../static/css/kkshinkai-v7.0.0.css">
 </head>
 <body>
-<h1>在 Swift 中手动管理内存</h1>
-<div id="kkshinkai-header"><span id="kkshinkai-date">August 24, 2020</span> &middot; Kk Shinkai</div>
+<header id="header">
+    <h1 class="title">在 Swift 中手动管理内存</h1>
+    <div><time datetime="August 24, 2020">Mon Aug 24 2020</time> &middot; Kk Shinkai</div>
+</header>
+<main>
 <h2>Unsafe Pointer</h2>
 <p>Swift 中有一系列指针类型, 简单地指向一块内存地址, 允许通过地址直接访问该块内存中的数据 (使用 <code>pointee</code> 属性或下标 <code>[0]</code>). 和 C 语言类似, Swift 此时也不会保证内存安全性, 一个指针类型可能会变成悬垂的, 且访问悬垂指针不会产生错误提示 (仅仅会读到无意义的数据).</p>
 <pre><code class="language-swift"><span class="hljs-keyword">let</span> array = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>]
@@ -189,7 +196,7 @@ suc(&amp;integer)
 <blockquote>
 <p><strong>Note</strong></p>
 <p>在 C 语言中, 联合 (union) 类型可能存储任何一个成员变量</p>
-<pre><code class="language-c"><span class="hljs-keyword">union</span> U {
+<pre><code class="language-c"><span class="hljs-class"><span class="hljs-keyword">union</span> <span class="hljs-title">U</span> {</span>
      <span class="hljs-keyword">int32_t</span> integer;
      <span class="hljs-keyword">double</span> real;
 };
@@ -197,13 +204,13 @@ suc(&amp;integer)
 <p>以如上代码为例, <code>union U</code> 类型的值要么是 <code>int32_t</code> 类型的 <code>integer</code>, 要么是 <code>double</code> 类型的 <code>real</code>, 因此该类型的大小只要取 <code>sizeof(int32_t)</code> 和 <code>sizeof(double)</code> 中最大的即可, 显然 <code>sizeof(union U) == 8</code>.</p>
 <p>不过, 联合类型有一个明显的缺点, 就是它不会进行类型检查, 即使存的是 <code>double</code> 类型, 取 <code>int32_t</code> 类型也不会报告任何错误, 字节序列会直接按 <code>int32_t</code> 类型的编码解释, 这后来甚至成为了 C 语言中一种惯用的强制类型转换手段. 这在追求类型安全的语言中是不可忍受的行为.</p>
 <p>其中一个解决方案就是为 <code>union U</code> 搭配一个枚举类型 <code>enum E</code>, 记录 <code>union U</code> 中存放变量的类型, 并在运行时进行判断:</p>
-<pre><code class="language-c"><span class="hljs-keyword">enum</span> E {
+<pre><code class="language-c"><span class="hljs-class"><span class="hljs-keyword">enum</span> <span class="hljs-title">E</span> {</span>
     Integer,
     Real
 };
 
-<span class="hljs-keyword">enum</span> E e = Real;
-<span class="hljs-keyword">union</span> U u; u.real = <span class="hljs-number">3.14</span>;
+<span class="hljs-class"><span class="hljs-keyword">enum</span> <span class="hljs-title">E</span> <span class="hljs-title">e</span> =</span> Real;
+<span class="hljs-class"><span class="hljs-keyword">union</span> <span class="hljs-title">U</span> <span class="hljs-title">u</span>;</span> u.real = <span class="hljs-number">3.14</span>;
 <span class="hljs-keyword">switch</span> (e) {
     <span class="hljs-keyword">case</span> Integer:
         <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d&quot;</span>, u.integer);
@@ -256,5 +263,6 @@ suc(&amp;integer)
 </ul>
 <p>(完)</p>
 
+</main>
 </body>
 </html>

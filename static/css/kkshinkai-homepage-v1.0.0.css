@@ -1,0 +1,40 @@
+h1.title {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #232323;
+    margin-bottom: 8px;
+}
+
+ul.table-of-contents {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+ul.table-of-contents li {
+    margin: 0;
+    padding: 10px 0;
+}
+
+ul.table-of-contents time {
+    display: block;
+    color: #919191;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+ul.table-of-contents a,
+ul.table-of-contents a:any-link {
+    color: #ffffff;
+    text-decoration: none;
+    border-bottom: none;
+    background-color: inherit;
+    display: block;
+    font-size: 20px;
+    transition: 0.7s color;
+}
+
+ul.table-of-contents a:hover {
+    text-decoration: none;
+    border-bottom: none;
+    color: #bdbdbd;
+}

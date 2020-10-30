@@ -1,0 +1,175 @@
+header#header {
+    border-bottom: 1px solid #232323;
+    margin-bottom: 8px;
+}
+
+header#header>div {
+    padding: 0 12px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #e2e2e2;
+}
+
+header#header>div>time {
+    font-weight: 400;
+    color: #b4b4b4;
+}
+
+header#header>h1 {
+    font-size: 33px;
+    margin-bottom: 4px;
+}
+
+h1 {
+    font-size: 28px;
+    margin-top: 44px;
+    margin-bottom: 14px;
+}
+
+h2 {
+    font-size: 20px;
+    margin-top: 29px;
+    margin-bottom: 12px;
+}
+
+/* TODO: Imporve styles for inline elements (strong, i, etc.) */
+a, a:any-link, a:link {
+    color:#bab4da;
+    text-decoration: none;
+}
+
+a:visited {
+    color:#bab4da;
+}
+
+a:active, a:hover {
+    color:#d4f1ff;
+}
+
+ul, ol {
+    padding-left: 24px;
+    list-style: circle;
+}
+
+details {
+    margin-bottom:2em
+}
+details :first-child {
+    margin-top:1.5em
+}
+
+img {
+    display: block;
+    max-width: 100%;
+    overflow: auto;
+    margin: 0 auto;
+}
+
+table {
+    border-collapse: collapse;
+    max-width: 100%;
+    overflow-x: scroll;
+    overflow: scroll;
+    display: block;
+}
+
+th, td {
+    border: 1px solid #535353;
+    padding: .1em .4em;
+}
+
+blockquote {
+    color: #5f636d;
+    border-left: 4px solid #202020;
+    font-size: .95em;
+    background-color: inherit;
+    padding: 8px 16px;
+    margin: 8px 12px;
+}
+
+blockquote>* {
+    margin: 5px 0;
+}
+
+blockquote :first-child {
+    margin-top: 0;
+}
+
+blockquote :last-child {
+    margin-bottom: 0;
+}
+
+pre, code {
+    font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+    color: #e7e7e7;
+}
+
+code {
+    display: inline-block;
+    color: #cdd7e7;
+    background-color: #202020;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: .82em;
+    padding: 1px 5px;
+}
+
+pre>code[class*="language-"] {
+    color: #e7e7e7;
+    border-radius: 0;
+    font-weight: 400;
+    border-left: 4px solid #37494e;
+    font-size: .8em;
+    overflow: auto;
+    display: block;
+    background-color: inherit;
+    padding: 4px 16px;
+    margin: 8px 12px;
+}
+
+/* hljs specialized for Swift */
+.hljs-comment {
+    color: #568a63;
+}
+
+.hljs-attribute, .hljs-doctag, .hljs-keyword, .hljs-meta-keyword, .hljs-name, .hljs-selector-tag {
+    color: #9ad4be;
+    font-weight: 700;
+}
+
+.hljs-deletion, .hljs-number, .hljs-quote, .hljs-selector-class, .hljs-selector-id, .hljs-string, .hljs-template-tag {
+    color: #b1c2db;
+}
+
+.hljs-type {
+    color: #d4cbeb;
+    font-weight: 700;
+}
+
+.hljs-link, .hljs-regexp, .hljs-selector-attr, .hljs-selector-pseudo, .hljs-symbol, .hljs-template-variable, .hljs-variable {
+    color:#ca6f6f
+}
+
+.hljs-literal {
+    color:#a0ce89
+}
+
+.hljs-addition, .hljs-built_in, .hljs-bullet, .hljs-code, .hljs-subst, .hljs-section, .hljs-title {
+    color: #97d4e4;
+}
+
+.hljs-meta {
+    color:#1f7199
+}
+
+.hljs-meta-string {
+    color:#4d99bf
+}
+
+.hljs-emphasis {
+    font-style:italic
+}
+
+.hljs-strong {
+    font-weight: 700
+}

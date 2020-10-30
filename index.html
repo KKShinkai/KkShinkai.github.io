@@ -1,54 +1,31 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-    <title>Index &middot; Kk Shinkai</title>
-    <link rel="stylesheet" href="./static/kkshinkai-v6.css">
-    <style>
-        ul#kkshinkai-index {
-            list-style: none;
-            padding: .3em;
-            margin: 0;
-        }
-
-        ul#kkshinkai-index li {
-            margin: .5em 0;
-            padding: .5em 0;
-        }
-
-        ul#kkshinkai-index time {
-            display: block;
-            color: #7c7c7c;
-            font-size: .8em;
-            line-height: 1em;
-        }
-
-        ul#kkshinkai-index a,
-        ul#kkshinkai-index a:link,
-        ul#kkshinkai-index a:active,
-        ul#kkshinkai-index a:hover,
-        ul#kkshinkai-index a:visited {
-            color: #333;
-            text-decoration: none;
-            border-bottom: none;
-            background-color: inherit;
-            display: block;
-            font-size: 1.2em;
-        }
-
-        ul#kkshinkai-index a:hover {
-            text-decoration: none;
-            border-bottom: none;
-            background-color: inherit;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <title>Homepage &middot; Kk Shinkai</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="stylesheet" href="./static/css/normalize-v8.0.1.css">
+    <link rel="stylesheet" href="./static/css/kkshinkai-common-v1.0.0.css">
+    <link rel="stylesheet" href="./static/css/kkshinkai-homepage-v1.0.0.css">
 </head>
-<body style="max-width: 36rem;">
-<h1>Kk Shinkai &middot; 深海</h1>
-<ul id="kkshinkai-index">
-    <li><time datetime="2020-08-24">August 24, 2020</time><a href="./2020_08_24_manual_memory_management/index.html">在 Swift 中手动管理内存</a></li>
-    <li><time datetime="2020-06-27">June 27, 2020</time><a href="./2020_06_27_unicode/index.html">Unicode 字符集与字符编码</a></li>
-</ul>
+<body>
+    <header>
+        <h1 class="title"><span style="letter-spacing: 2px;">Kk Shinkai</span> &middot; 深海 ⛵️</h1>
+    </header>
+    <main><article>
+        <ul class="table-of-contents">
+            <li><article>
+                <time datetime="2020-08-24">August 24, 2020</time>
+                <a href="./2020-08-24-manual-memory-management-in-swift/index.html">在 Swift 中手动管理内存</a>
+            </article></li>
+            <li><article>
+                <time datetime="2020-06-27">June 27, 2020</time>
+                <a href="./2020-06-27-unicode-in-swift/index.html">Swift 中的字符串与 Unicode 编码</a>
+            </article></li>
+        </ul>
+    </article></main>
 </body>
 </html>
