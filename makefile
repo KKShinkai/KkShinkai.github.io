@@ -1,4 +1,4 @@
-src = $(wildcard */index.md)
+src = $(wildcard ./index.md ./**/*.md)
 
 all : $(src:.md=.html)
 
