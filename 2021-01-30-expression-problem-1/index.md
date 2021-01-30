@@ -428,9 +428,9 @@ getFirstOperand :: Op -> Expr
 getFirstOperand (OpExpr l _) = l
 ```
 
-你会发现, 前者总是被迫去关注所有类型的节点, 而后者则可以视实际情况选择, 当不需要关系 `Op` 究竟是什么时, 后者总是能提供更简洁的代码.
+你会发现, 前者总是被迫去关注所有类型的节点, 而后者则可以视实际情况选择, 当不需要关心 `Op` 究竟是什么时, 后者总是能提供更简洁的代码.
 
-如果你读过 Type and Programming Language, 你应该能记得, 书中示例代码中的 AST 用的就是前者这种糟糕的设计, 它的每个 AST 节点的 data constructor 都有一个用于表示源码位置信息的 `info`{.ocaml} 参数.
+如果你读过 *Type and Programming Language*, 你应该能记得, 书中示例代码中的 AST 用的就是前者这种糟糕的设计, 它的每个 AST 节点的 data constructor 都有一个用于表示源码位置信息的 `info`{.ocaml} 参数.
 
 ```ocaml
 type term = TmTrue   of info
@@ -455,7 +455,7 @@ let get_info t =
                | TmIsZero(info,_) = info
 ```
 
-当然, 作为例子是没问题的, 但如果你在写一个正式的编译器, 可能就需要好好思考一下了.
+当然, 作为例子是没问题的, 但如果你在写一个正式的编译器, 可能就需要好好考虑一下了.
 
 想一想, 上一节中 Swift 实现的 visitor pattern 对应的是哪种写法, 这种粒度控制在拥有 subtyping 和 inheritance 的语言中又是如何起作用的?
 
