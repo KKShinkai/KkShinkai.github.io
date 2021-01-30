@@ -6,7 +6,8 @@
   "author": "Kk Shinkai",
   "license": "MIT",
   "dependencies": {
-    "highlight.js": "^10.4.1",
-    "markdown-it": "^12.0.2"
+    "markdown-it": "^12.0.2",
+    "markdown-it-highlight-lines": "^1.0.2",
+    "markdown-it-highlightjs": "^3.4.0"
   }
 }

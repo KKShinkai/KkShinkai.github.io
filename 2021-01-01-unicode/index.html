@@ -9,14 +9,14 @@
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
 <link rel="manifest" href="../site.webmanifest">
 <link rel="stylesheet" href="../static/css/normalize-v8.0.1.css">
-<link rel="stylesheet" href="../static/css/kkshinkai-v8.0.1.css">
+<link rel="stylesheet" href="../static/css/kkshinkai-v9.0.0.css">
 </head>
 <body>
 <main class="markdown-body">
 <img src="./cover.jpg" style="width: 100%" />
 <h1>Unicode 字符集与字符编码</h1>
 <h2>字符集的历史</h2>
-<p>计算机只能处理二进制数字, 如果要处理文本, 就必须建立字符和二进制字节序列之间的关系. ASCII (American Standard Code for Information Interchange) 编码是基于拉丁字母的一套编码系统, 也是最简单的<strong>字符集</strong> (character set), 它建立了字符和代码单元 (0 ~ 127 的整数) 之间的映射关系表. 例如 <code>0110 0001</code> (97) 对应 <code>'a'</code>, <code>0010 0100</code> (36) 对应 <code>'$'</code>, <code>0010 1000</code> (40) 对应 <code>'('</code> 等等.</p>
+<p>计算机只能处理二进制数字, 如果要处理文本, 就必须建立字符和二进制字节序列之间的关系. ASCII (American Standard Code for Information Interchange) 编码是基于拉丁字母的一套编码系统, 也是最简单的<strong>字符集</strong> (character set), 它建立了字符和代码单元 (0 ~ 127 的整数) 之间的映射关系表. 例如 <code>0110 0001</code> (97) 对应 <code>&#x27;a&#x27;</code>, <code>0010 0100</code> (36) 对应 <code>&#x27;$&#x27;</code>, <code>0010 1000</code> (40) 对应 <code>&#x27;(&#x27;</code> 等等.</p>
 <p>ASCII 字符集很容易理解, 但问题是, 它能表示的字符数量太少了, ASCII 字符集只包括基本拉丁字母, 阿拉伯数字, 英式标点符号和少许控制字符. 要处理其他语言的文字, 一个字节显然是不够的, 各个国家逐渐开始出现了自己的编码标准. 例如, 中国制定了 GB2312 标准 (中国国家标准简体中文字符集), 使用两个字节 (16-bit) 表示字符, 收录了 6763 个汉字, 还包括拉丁字母, 希腊字母, 日文平假名及片假名字母, 俄语西里尔字母在内的 682 个其他字符. 后来又出现了 GBK (K 是 “扩展” 的拼音首字母) 和 GB18030 汉字字符集, 处理一些古汉语和罕用字. 日本 (Shift_JIS), 韩国 (Euc-kr) 等国家也都分别出现了自己的字符集. 然而, 这些字符集互相并不兼容, 甚至产生了冲突, 如何同时使用多国文字变成了一个难题.</p>
 <p>在这种情况下, Unicode 联盟开始为了世界上大多数文字系统进行整理和编码, 创建了 Unicode 统一码规范. 与此同时, ISO 组织也在做同样的事情, 开展了 Universal Multiple-Octet Coded Character Set 项目, 简称 UCS. 很快, 双方发现了互相的存在, 并意识到世界上并不需要两套不同的通用字符集, 所以双方开始进行整合. 到 Unicode 2.0 为止, 二者的编码已经大部分做到一致了.</p>
 <h2>现代字符编码模型</h2>
@@ -34,7 +34,7 @@
 <p><strong>文本元素</strong> (text element) 是用于创建单词和句子的基本文字表示, 如英语字母, 日语平假名, 汉语中的方块字等等. 如何将<strong>文本</strong> (text) 分割为文本元素取决于具体的语言和文字处理程序, 英语中的 “A” 和 “a” 在渲染时是不同的文字元素, 但对于搜索程序来说有时却是相同的; 传统西班牙语排序程序中, “ll” 是一个文本元素, 位于 “l” 和 “m” 之间, 但在打字时则是两个分离的 “l”. 正因如此, 文本分段 (text segmentation) 非常的复杂, Unicode 规范避免对不同程序下的文本元素作出严格的定义, 取而代之定义的是更加底层的编码字, 一个文本元素可能由一或多个编码字组成.</p>
 <img src="images/text_element_and_character.jpg" width=400 />
 <p><strong>编码字</strong> (encoded character) 是 Unicode 规范的的核心概念, 一般来说字符 (character) 就是编码字的缩写, 它指的是抽象字和码点之间的映射关系. 其中, <strong>抽象字</strong> (abstract character) 是用于组织, 控制或表示文本数据的基本单位, 而<strong>码点</strong> (code point) 或<strong>码位</strong> (code position) 则是用于表示数据的整数, 编码字在二者之间建立的映射关系表正是 “字符集” 一词最原始的含义, 也是贯穿 Unicode 规范的核心.</p>
-<p>但是, 和 ASCII 字符集不同, 编码字并非是双射 (bijection) 关系, 一个抽象字可能对应多种编码方式, 以 <code>'Å'</code> 为例, 码点 U+00C5 和 U+212B 都表示该字符, 而且它还拥有一个使用组合字 (combining character) 表示的形式, 由 U+0041 和 U+030A 两个码点表示.</p>
+<p>但是, 和 ASCII 字符集不同, 编码字并非是双射 (bijection) 关系, 一个抽象字可能对应多种编码方式, 以 <code>&#x27;Å&#x27;</code> 为例, 码点 U+00C5 和 U+212B 都表示该字符, 而且它还拥有一个使用组合字 (combining character) 表示的形式, 由 U+0041 和 U+030A 两个码点表示.</p>
 <img src="images/abstract_and_encoded.jpg" width=300 />
 <h2>码点</h2>
 <p><strong>码点</strong> (code point) 是编码字之下的抽象层, 对于 Unicode 规范来说, 码点就是 0 ~ 10FFFF<sub>16</sub> 区间上的整数, 这个区间提供了 1,114,112 个码点, 被称为编码空间 (codespace).</p>
@@ -55,15 +55,15 @@
 <p><strong>Unicode 标量值</strong> (Unicode scalar value) 是指非 Surrogate 的码点, 后文会更详细的讨论这些概念.</p>
 <img src="images/code_point_type.jpg" width=450 />
 <h2>组合字</h2>
-<p><strong>组合字</strong> (combining character) 附着于与之关联的基本字符, 渲染时与之共同参与对字形的描述. 上文中提到的 <code>'Å'</code> (<code>&quot;\u{0041}\u{030A}&quot;</code>) 就是一个典型的组合字, 由 <code>'A'</code> (<code>&quot;\u{0041}&quot;</code>) 和 <code>'◌̊'</code> (<code>&quot;\u{030A}&quot;</code>) 组合而成. 组合字可以用于任何基本字符, 比如 <code>'B'</code> (<code>&quot;\u{0042}&quot;</code>) 同样可以和 <code>'◌̊'</code> 组成 <code>'B̊'</code>.</p>
-<p>注意, <code>'◌̊'</code> 中的 <code>'◌'</code> (<code>&quot;\u{25cc}&quot;</code>) 符号并不是 <code>' ̊'</code> 的一部分, 只是用于表示组合字的一种惯用手法, 显示该位置应有一个基本字符.</p>
-<p>一个基本字符可被不止一个组合字附着, 诸如 <code>'ạ̭̈̃'</code> (<code>&quot;\u{0061}\u{0308}\u{0303}\u{0323}\u{032D}&quot;</code>) 这样的情况都是被允许的行为.</p>
+<p><strong>组合字</strong> (combining character) 附着于与之关联的基本字符, 渲染时与之共同参与对字形的描述. 上文中提到的 <code>&#x27;Å&#x27;</code> (<code>&quot;\u{0041}\u{030A}&quot;</code>) 就是一个典型的组合字, 由 <code>&#x27;A&#x27;</code> (<code>&quot;\u{0041}&quot;</code>) 和 <code>&#x27;◌̊&#x27;</code> (<code>&quot;\u{030A}&quot;</code>) 组合而成. 组合字可以用于任何基本字符, 比如 <code>&#x27;B&#x27;</code> (<code>&quot;\u{0042}&quot;</code>) 同样可以和 <code>&#x27;◌̊&#x27;</code> 组成 <code>&#x27;B̊&#x27;</code>.</p>
+<p>注意, <code>&#x27;◌̊&#x27;</code> 中的 <code>&#x27;◌&#x27;</code> (<code>&quot;\u{25cc}&quot;</code>) 符号并不是 <code>&#x27; ̊&#x27;</code> 的一部分, 只是用于表示组合字的一种惯用手法, 显示该位置应有一个基本字符.</p>
+<p>一个基本字符可被不止一个组合字附着, 诸如 <code>&#x27;ạ̭̈̃&#x27;</code> (<code>&quot;\u{0061}\u{0308}\u{0303}\u{0323}\u{032D}&quot;</code>) 这样的情况都是被允许的行为.</p>
 <img src="images/combining_character.jpg" width=300 />
 <h2>字素簇</h2>
-<p>接着我们接触一个附加概念, 一个在编码字抽象层次之上的概念: 字素簇. <strong>字素簇</strong> (grapheme cluster) 指人直觉和认知上所认为是单个字符的文本元素. 一个字位簇可能就是一个抽象字, 也可能由多个抽象字组成. 字素簇应当是文本操作的基本单位, 高级文本元素在分割时, 通常不会从一个字素簇中间拆分. 比如一个排版程序在自动换行时将 <code>'Å'</code> 的 <code>'A'</code> 和 <code>'◌̊'</code> 拆到了两行中, 这显然是不可容忍的行为. 再比如反转字符串 <code>'ÅB'</code> (<code>&quot;\u0041\u030A\u0042&quot;</code>) 的时候, <code>&quot;\u0041\u030A&quot;</code> (<code>'Å'</code>) 应整体和 <code>'B'</code> 交换位置, 得到 <code>'BÅ'</code> (<code>&quot;\u0042\u0041\u030A&quot;</code>), 而不该是简单的反转码位的排列, 得到 <code>'B̊A'</code> (<code>&quot;\u0041\u030A\u0042&quot;</code>).</p>
+<p>接着我们接触一个附加概念, 一个在编码字抽象层次之上的概念: 字素簇. <strong>字素簇</strong> (grapheme cluster) 指人直觉和认知上所认为是单个字符的文本元素. 一个字位簇可能就是一个抽象字, 也可能由多个抽象字组成. 字素簇应当是文本操作的基本单位, 高级文本元素在分割时, 通常不会从一个字素簇中间拆分. 比如一个排版程序在自动换行时将 <code>&#x27;Å&#x27;</code> 的 <code>&#x27;A&#x27;</code> 和 <code>&#x27;◌̊&#x27;</code> 拆到了两行中, 这显然是不可容忍的行为. 再比如反转字符串 <code>&#x27;ÅB&#x27;</code> (<code>&quot;\u0041\u030A\u0042&quot;</code>) 的时候, <code>&quot;\u0041\u030A&quot;</code> (<code>&#x27;Å&#x27;</code>) 应整体和 <code>&#x27;B&#x27;</code> 交换位置, 得到 <code>&#x27;BÅ&#x27;</code> (<code>&quot;\u0042\u0041\u030A&quot;</code>), 而不该是简单的反转码位的排列, 得到 <code>&#x27;B̊A&#x27;</code> (<code>&quot;\u0041\u030A\u0042&quot;</code>).</p>
 <p>组合字是字素簇的重要组成成分, 但字素簇并非只用于确保组合字的完整性, 其划分和具体的语言的种类, 算法的选择都一定关系, 斯洛伐克 (Slovak) 语中的 <code>&quot;ch&quot;</code> 或赛萨拉 (Sisaala) 语中的 <code>&quot;ky&quot;</code> 都被视为一个独立的字素簇, 尽管它们确实由两个分离的字母组成.</p>
 <p>Swift 的 <code>String</code> 类型默认以字位簇作为文本处理的基本单位.</p>
-<pre><code class="language-swift"><span class="hljs-keyword">let</span> str = <span class="hljs-string">&quot;\u{0041}\u{030A}\u{0042}&quot;</span>
+<pre><code class="hljs language-swift"><span class="hljs-keyword">let</span> str <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">\u{0041}</span><span class="hljs-subst">\u{030A}</span><span class="hljs-subst">\u{0042}</span>&quot;</span>
 
 str                    <span class="hljs-comment">// &quot;ÅB&quot;</span>
 <span class="hljs-type">String</span>(str.reversed()) <span class="hljs-comment">// &quot;BÅ&quot;</span>
@@ -71,13 +71,13 @@ str                    <span class="hljs-comment">// &quot;ÅB&quot;</span>
 <span class="hljs-type">Array</span>(str) <span class="hljs-comment">// [&quot;Å&quot;, &quot;B&quot;]</span>
 </code></pre>
 <p>Java 如果直接使用 <code>StringBuilder</code> 的 <code>reverse()</code> 方法翻转字符串, 得到的结果是错的.</p>
-<pre><code class="language-java"><span class="hljs-keyword">var</span> str = <span class="hljs-string">&quot;\u0041\u030A\u0042&quot;</span>;
+<pre><code class="hljs language-java"><span class="hljs-keyword">var</span> str = <span class="hljs-string">&quot;\u0041\u030A\u0042&quot;</span>;
 
 str;                              <span class="hljs-comment">// &quot;ÅB&quot;</span>
 <span class="hljs-keyword">new</span> StringBuilder(str).reverse(); <span class="hljs-comment">// &quot;B̊A&quot;</span>
 </code></pre>
 <p>使用正则表达式可以缓解这个问题, 在正则表达式语法中, <code>\X</code> 用于表达字素簇, 而 <code>\b{g}</code> 用于表达字素簇的边界, 使用 <code>.split(&quot;\\b{g}&quot;)</code> 方法就能够正确的按照字素簇将字符串分割为字素簇数组了.</p>
-<pre><code class="language-java"><span class="hljs-keyword">var</span> str = <span class="hljs-string">&quot;\u0041\u030A\u0042&quot;</span>;
+<pre><code class="hljs language-java"><span class="hljs-keyword">var</span> str = <span class="hljs-string">&quot;\u0041\u030A\u0042&quot;</span>;
 
 <span class="hljs-keyword">var</span> cluster = str.split(<span class="hljs-string">&quot;\\b{g}&quot;</span>); <span class="hljs-comment">// String[2] { &quot;Å&quot;, &quot;B&quot; }</span>
 </code></pre>
@@ -108,7 +108,7 @@ str;                              <span class="hljs-comment">// &quot;ÅB&quot;
 </ol>
 <p>前导代理, 后尾代理, 和 BMP 中有效字符的码位互不重叠, 因此搜索程序的实现是简单的. 一个字符编码的一部分不可能与另一个字符编码的不同部分相重叠, 我们称之为<strong>自同步的</strong> (self-synchronizing), 可以通过仅检查一个码元来判定给定字符的下一个字符的起始码元.</p>
 <p>Java 中的字符串是 UTF-16 编码的, 这和 Java 早期选择的 UCS-2 编码有关, UCS-2 是一个定长编码, 当后来 UCS-2 无法表示 Unicode 字符时, 过渡到了兼容它的 UTF-16 成为了 Java 最自然的选择. 不过, 这同时也造成了 Java <code>String</code> 类的部分方法无法正确的处理变长编码. 在 Java 中, <code>char</code> (及对应包装类 <code>Character</code>) 类是一个 UTF-16 码元, 随机访问字符串所得到的自然也是码元, 是无意义的. 正确遍历 Java 字符串的方法是 :</p>
-<pre><code class="language-java"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; str.length();) {
+<pre><code class="hljs language-java"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; str.length();) {
     <span class="hljs-keyword">int</span> c = str.codePointAt(i);
     System.out.println(c);
     i += Character.charCount(c);
@@ -166,16 +166,16 @@ str;                              <span class="hljs-comment">// &quot;ÅB&quot;
 </table>
 <p>ASCII 是 UTF-8 的一个子集, ASCII 字符串也同时是 UTF-8 字符串, 不需要转换.</p>
 <p>Rust 的字符串 <code>String</code> (<code>str</code>) 就是 UTF-8 编码的, 其内部是一个 8-bit 无符号整数数组 <code>Vec&lt;u8&gt;</code>, 并且提供了两种迭代器: <code>.chars()</code> 逐码点迭代, <code>.bytes()</code> 逐码元迭代. Rust 在不借助 Unicode 库的情况下暂时还无法处理字素簇.</p>
-<pre><code class="language-rust"><span class="hljs-string">&quot;🌊&quot;</span>.chars().collect::&lt;<span class="hljs-built_in">Vec</span>&lt;_&gt;&gt;() <span class="hljs-comment">// [&#x27;🌊&#x27;]</span>
+<pre><code class="hljs language-rust"><span class="hljs-string">&quot;🌊&quot;</span>.chars().collect::&lt;<span class="hljs-built_in">Vec</span>&lt;_&gt;&gt;() <span class="hljs-comment">// [&#x27;🌊&#x27;]</span>
 <span class="hljs-string">&quot;🌊&quot;</span>.bytes().collect::&lt;<span class="hljs-built_in">Vec</span>&lt;_&gt;&gt;() <span class="hljs-comment">// [240, 159, 140, 138]</span>
 <span class="hljs-string">&quot;é&quot;</span>.chars().collect::&lt;<span class="hljs-built_in">Vec</span>&lt;_&gt;&gt;()   <span class="hljs-comment">// [&#x27;e&#x27;, &#x27;\u{301}&#x27;]</span>
 </code></pre>
 <p>Rust 标准库提供了一系列的字符串类型, 其中 <code>OsString</code> (<code>OsStr</code>) 是平台相关的, 也是 <code>Path</code> (<code>PathBuf</code>) 的内部实现. Windows API 中的字符串是  UTF-16 的, 并且部分未能正确的验证合法性, 当需要大量使用 Windows API 时, 应考虑该类型.</p>
 <p>MySQL 字符编码集中有两套 UTF-8 编码实现: <code>utf8</code> 和 <code>utf8mb4</code>, 其中 <code>utf8</code> 一个码点最多占据 3 字节空间, 是一个过时的实现. 在 5.5 版本中, MySQL 推出了 <code>utf8mb4</code>, 并调整 <code>utf8</code> 为 <code>utf8mb3</code> 的别名, 以修正此遗留问题.</p>
-<pre><code class="language-sql"><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> utf8mb4_table (
-    <span class="hljs-keyword">id</span> <span class="hljs-built_in">int</span> auto_increment primary <span class="hljs-keyword">key</span>,
-    <span class="hljs-keyword">content</span> <span class="hljs-built_in">varchar</span>(<span class="hljs-number">255</span>)
-)  <span class="hljs-keyword">default</span> <span class="hljs-keyword">charset</span> utf8mb4;
+<pre><code class="hljs language-sql"><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> utf8mb4_table (
+    id <span class="hljs-type">int</span> auto_increment <span class="hljs-keyword">primary</span> <span class="hljs-keyword">key</span>,
+    content <span class="hljs-type">varchar</span>(<span class="hljs-number">255</span>)
+)  <span class="hljs-keyword">default</span> charset utf8mb4;
 </code></pre>
 <h2>参考资料</h2>
 <ul>

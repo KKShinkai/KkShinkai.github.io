@@ -1,21 +1,15 @@
-import hljs from 'highlight.js';
 let markdownOptions = {
     html: true,
     linkify: false,
-    highlight: (code, lang) => {
-        if (lang && hljs.getLanguage(lang))
-            try {
-                return hljs.highlight(lang, code).value;
-            } catch {
-                return '';
-            }
-        else
-            return '';
-    }
 };
 
 import MarkdownIt from 'markdown-it';
 let markdownIt = new MarkdownIt(markdownOptions);
+
+import highlight from 'markdown-it-highlightjs';
+import highlightLine from 'markdown-it-highlight-lines';
+markdownIt.use(highlight, { auto: false, inline: true });
+markdownIt.use(highlightLine);
 
 import { readFile, writeFile } from 'fs';
 readFile(process.argv[2], (err, data) => {
@@ -32,7 +26,7 @@ readFile(process.argv[2], (err, data) => {
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
 <link rel="manifest" href="../site.webmanifest">
 <link rel="stylesheet" href="${ process.argv[2] == "index.md" ? "" : "."}./static/css/normalize-v8.0.1.css">
-<link rel="stylesheet" href="${ process.argv[2] == "index.md" ? "" : "."}./static/css/kkshinkai-v8.0.1.css">
+<link rel="stylesheet" href="${ process.argv[2] == "index.md" ? "" : "."}./static/css/kkshinkai-v9.0.0.css">
 </head>
 <body>
 <main class="markdown-body">
