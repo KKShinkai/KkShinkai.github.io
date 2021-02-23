@@ -417,7 +417,7 @@ data Op where
 
 -- (2)
 data Expr where
-  Op :: Op -> Expr
+  Op :: OpExpr -> Expr
   ...
 data OpExpr where
   OpExpr :: Op -> OpExpr
