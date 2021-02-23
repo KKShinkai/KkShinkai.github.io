@@ -1,5 +1,3 @@
-<img src="./cover.jpg" style="width: 100%" />
-
 # Unicode 字符集与字符编码
 
 ## 字符集的历史

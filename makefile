@@ -10,7 +10,7 @@ MESSAGE=`date +"%Y.%m.%d %H:%M update"`
 
 usage:
 	@echo "${ANSI_NOTE}note${ANSI_END}:" \
-		  "try \`${ANSI_CMD}make update${ANSI_END}\`, " \
+		  "try \`${ANSI_CMD}make build${ANSI_END}\`, " \
 		  "\`${ANSI_CMD}make clean${ANSI_END}\`, or" \
 		  "\`${ANSI_CMD}make update${ANSI_END}\` command."
 
