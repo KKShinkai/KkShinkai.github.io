@@ -1,6 +1,6 @@
 .PHONY: usage, update, clean
 
-src = $(wildcard ./index.md ./**/*.md)
+src = $(wildcard ./**/*.md)
 
 ANSI_NOTE=\033[1;34m
 ANSI_CMD=\033[0;32m
@@ -15,9 +15,16 @@ usage:
 		  "\`${ANSI_CMD}make update${ANSI_END}\` command."
 
 build: $(src:.md=.html)
+	pandoc --filter mathjax-pandoc-filter \
+		   --metadata title="Kk Shinkai's Journal" \
+		   --template="static/template/index.html" \
+		   --standalone -o index.html index.md
 
 $(src:.md=.html): %.html : %.md
-	node --no-warnings ./static/script/build.mjs $< $@
+	pandoc --filter mathjax-pandoc-filter \
+		   --metadata title="Kk Shinkai's Journal" \
+		   --template="static/template/template.html" \
+		   --standalone -o $@ $<
 
 clean :
 	-rm $(src:.md=.html)
