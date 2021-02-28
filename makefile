@@ -26,10 +26,10 @@ $(src:.md=.html): %.html : %.md
 		   --template="static/template/template.html" \
 		   --standalone -o $@ $<
 
-clean :
+clean:
 	-rm $(src:.md=.html)
 
-update:
+update: build
 	@echo "${ANSI_NOTE}note${ANSI_END}: ${MESSAGE} updating ..."
 	@git add -A .
 	@git commit -m "${MESSAGE}"
