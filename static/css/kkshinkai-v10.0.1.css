@@ -92,23 +92,24 @@ pre>code {
 }
 
 table {
+  display: block;
   border-collapse: collapse;
   border-spacing: 0;
   width: auto;
   max-width: 100%;
-  border-top: 2px solid black;
-  border-bottom: 2px solid black;
-  margin-left: auto;
-  margin-right: auto;
   overflow-x: auto;
 }
 
 table tr > th {
+  border-top: 2px solid black;
   border-bottom: 1px solid black;
 }
 
-th,
-td {
+table tr:last-child td {
+  border-bottom: 2px solid black;
+}
+
+th, td {
   text-align: left;
   padding: 0.5rem;
   line-height: 1.1;
