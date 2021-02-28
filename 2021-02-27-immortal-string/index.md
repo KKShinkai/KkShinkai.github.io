@@ -36,7 +36,7 @@
     const char *a = "AAAAAAAAAA";
     const char *b = "AAAAAAAAAA";
     
-    printf("%p, %p\n", a, b); // Print "1", aka. true
+    printf("%p, %p\n", a, b); // Print "0x100003f9a, 0x100003f9a"
 
 换句话说, 在一些动态语言里, 如果你使用字符串充当枚举 (enumeration), 性能并不会因此而打折扣.
 

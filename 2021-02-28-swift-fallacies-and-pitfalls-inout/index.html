@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>KS. Journal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../static/css/normalize-v8.0.1.css">
+<link rel="stylesheet" href="../static/css/katex-font.css">
+<link rel="stylesheet" href="../static/css/kkshinkai-v10.0.1.css">
+</head>
+<body>
+<h1 id="swift-中的谬误和陷阱-1-理解-inout-参数的求值策略">Swift 中的谬误和陷阱 (1): 理解 <code>inout</code> 参数的求值策略</h1>
+<h2 id="传引用调用">传引用调用</h2>
+<p>故事要从 Python, Java, JavaScript 这类语言的求值策略 (evaluation strategy) 说起, 它们是典型的传共享对象的语言, 以 JavaScript 为例:</p>
+<pre><code>function example(xs) {
+    xs = [2, 3, 4]
+}
+
+let xs = [1, 2, 3]
+example(ys)
+console.log(ys) // Print &quot;[1, 2, 3]&quot;</code></pre>
+<p>在 <code>example</code> 函数中, 形式参数 <code>xs</code> 被改成了 <code>[2, 3, 4]</code>, 但 <code>ys</code> 的值却没有变. 如果拿一段看似差不多的 C++ 代码来对比</p>
+<pre><code>void example(std::array&lt;int, 3&gt; &amp;xs) {
+    xs = {2, 3, 4};
+}
+
+std::array&lt;int, 3&gt; ys = {1, 2, 3};
+example(ys);
+support::fmt(&quot;{}&quot;, ys); // Print &quot;[2, 3, 4]&quot;</code></pre>
+<p>你会发现它们做的根本不是一件事. 参考下边的这三个函数</p>
+<pre><code>int i = 42;
+
+void callValue(int value_object) {
+    value_object = i;
+}
+
+void callSharedObject(int *shared_object) {
+    shared_object = &amp;i;
+}
+
+void callReference(int *reference) {
+    *reference = i;
+}
+
+int x = 0;
+
+callValue(x);
+printf(&quot;%d\n&quot;, x); // Print &quot;0&quot;
+
+callSharedObject(&amp;x);
+printf(&quot;%d\n&quot;, x); // Print &quot;0&quot;
+
+callReference(&amp;x);
+printf(&quot;%d\n&quot;, x); // Print &quot;42&quot;</code></pre>
+<p>换句话说, 如果参数共享的是地址, 那语言内部就必须提供解引用 (dereference) 的方法, 就像 C 语言里的 <code>*</code> 操作符那样; 如果参数共享的是对象, 那你唯一能对它做的改变就是让它指向其他地址, 而无法让它在原地修改.</p>
+<p>Swift 的 <code>class</code> 类型是传共享对象的, 但为了避免上边 JavaScript 中那样令人费解的代码, Swift 的参数被要求是不可变的.</p>
+<pre><code>func call(_ sharedObject: NSArray) {
+    sharedObject = [2, 3, 4]
+    // Error: Cannot assign to value: &#39;ref&#39; is a &#39;let&#39; constant
+}</code></pre>
+<p>如果你想要改变 <code>sharedObject</code> 对应的实际参数的值, 就可以使用 <code>inout</code> 参数啦!</p>
+<pre><code>func call(_ sharedObject: inout NSArray) {
+    sharedObject = [2, 3, 4]
+}
+
+var array: NSString = [1, 2, 3]
+call(&amp;array)
+print(array) // Print &quot;(2, 3, 4)&quot;</code></pre>
+<p>这么说, Swift 中的 <code>inout</code> 参数是传引用调用 (call by reference) 的喵? 并不, 这就要涉及到我想说的第二个问题了.</p>
+<h2 id="传副本恢复调用">传副本恢复调用</h2>
+<p>Swift 中有计算属性 (computed property) 的概念. 以下边的这个 <code>Angle</code> 类型为例:</p>
+<pre><code>struct Angle {
+    var degree: Double = 0
+
+    var radians: Double {
+        set { degree = newValue / .pi * 180 }
+        get { degree * .pi / 180 }
+    }
+}
+
+var angle = Angle()
+angle.radians = 2.0 * .pi
+print(angle.degree) // Print &quot;360.0&quot;</code></pre>
+<p>这是一个非常棒的特性, 你可以用 <code>angle.radians = ...</code> 语句来为 <code>radians</code> 赋值, 也可以读取它的值, Swift 会帮你调用 <code>radians</code> 中的 <code>set(newValue)</code> 或 <code>get</code> 函数. 通过 <code>radians</code> 属性, 你可以以弧度制 (而不是角度制) 来操作 <code>Angle</code> 类型, 但对 <code>Angle</code> 来说, 存储的数据始终都只有角度制的 <code>degree</code>, 不会额外浪费空间.</p>
+<p>我们把 <code>degree</code> 这样拥有自己的内存空间的对象称为物理对象 (physical object); 而把 <code>radians</code> 这样看起来和用起来都和物理对象无异, 却可能没有自己的内存空间的对象称为逻辑对象 (logical object). 这时候问题就出现啦. 由于逻辑对象有时候没有自己的内存空间, 就谈不上指针和引用, 那当它作为 <code>inout</code> 参数被传递时, 求值策略该如何定义呢?</p>
+<p>Swift 中 <code>inout</code> 参数的语义是传副本恢复调用 (call by value result), 过程是这样哒:</p>
+<ol type="1">
+<li>当函数被调用时, 实际参数的值被拷贝 (copy);</li>
+<li>在函数体中, 对这个副本进行修改;</li>
+<li>当函数返回时, 将这个副本赋值给原来的实际参数;</li>
+</ol>
+<p>那么, 我们能不能说, 在参数是物理对象时, Swift 是传引用调用的; 在参数的逻辑对象时, Swift 是传副本恢复调用的呢? 其实, 这可不是个好主意. 这就是我要说的第三个问题了.</p>
+<h2 id="语义和实现">语义和实现</h2>
+<p>如果我们把逻辑对象定义成: 不管看起来还是用起来都和物理对象一样的对象. 那不难想到, 物理对象完全能满足这个定义, 一个物理对象必然也是逻辑对象, 换句话说, 逻辑对象是物理对象的严格超集. 同理, 传副本恢复调用其实也是传引用调用的严格超集, 我们在 Swift 里根本就没必要提传引用调用这件事.</p>
+<p>之前有人问过我这样一个问题: “既然 Swift 是传副本恢复调用的, 那为什么物理对象作为 <code>inout</code> 参数传入时, 生成的汇编 / LLVM IR 只传递了它的地址, 而没有拷贝的过程呢?”. 这就是典型的对 “语义 (semantics)” 的误解啦.</p>
+<p>通俗来讲, 语义只在意一个语言 “像什么”, 而编译器实现才在意一个语言 “是什么”. 传副本恢复调用可不会逼着编译器进行无意义的复制和写回, 只要结果没有问题, 那不管怎么优化都不关语义的事喔. 记住, 通过汇编来反推语义是非常非常非常错误的行为!</p>
+<h2 id="终">终</h2>
+</body>
+</html>
