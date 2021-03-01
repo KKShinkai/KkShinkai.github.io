@@ -46,6 +46,6 @@
 
 这就是 Lisp (以及 Erlang, Elixir, Ruby) 里 symbol 的本质, 虚拟机会维护一个字符串驻留池 (string intern pool), 不管是调用 `symbol->string` 和 `string->symbol`, 还是享受 $O(1)$ 的时空开销, 都可以各得其所.
 
-# 终
+## 终
 
 因为仅仅只是想玩下梗, 不是技术性文章, 所以本文到此就结束啦!
