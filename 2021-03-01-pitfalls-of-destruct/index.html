@@ -33,6 +33,6 @@ public mutating func swapAt(_ i: Index, _ j: Index) {
     self[i] = self[j]
     self[j] = tmp
 }</code></pre>
-<p><strong>思考题</strong>: 可以用 <code>swap(&amp;self[i], &amp;self[j])</code> 简化它么? 为什么? 那 <code>(self[i], self[j]) = (self[j], self[i])</code> 呢? 它们有什么本质区别?</p>
+<p><strong>思考题</strong>: 可以用 <code>swap(&amp;self[i], &amp;self[j])</code> 简化 <code>swapAt</code> 函数么? 为什么? 那 <code>(self[i], self[j]) = (self[j], self[i])</code> 呢? 上边提到的这几种写法之间有什么本质区别?</p>
 </body>
 </html>

@@ -30,4 +30,4 @@
         self[j] = tmp
     }
 
-**思考题**: 可以用 `swap(&self[i], &self[j])` 简化它么? 为什么? 那 `(self[i], self[j]) = (self[j], self[i])` 呢? 它们有什么本质区别?
+**思考题**: 可以用 `swap(&self[i], &self[j])` 简化 `swapAt` 函数么? 为什么? 那 `(self[i], self[j]) = (self[j], self[i])` 呢? 上边提到的这几种写法之间有什么本质区别?
