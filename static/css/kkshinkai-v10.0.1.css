@@ -114,3 +114,8 @@ th, td {
   padding: 0.5rem;
   line-height: 1.1;
 }
+
+p>svg:first-child:last-child {
+  display: block;
+  margin: 0 auto;
+}
