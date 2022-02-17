@@ -16,7 +16,7 @@ usage:
 
 build: $(src:.md=.html)
 	pandoc --filter mathjax-pandoc-filter \
-		   --metadata title="Patpat Journal" \
+		   --metadata title="Shinkai" \
 		   --template="static/template/index.html" \
 		   --standalone -o index.html index.md
 
