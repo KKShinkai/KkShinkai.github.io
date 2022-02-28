@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>KS. Journal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../static/css/normalize-v8.0.1.css">
+<link rel="stylesheet" href="../static/css/katex-font.css">
+<link rel="stylesheet" href="../static/css/kkshinkai-v10.0.1.css">
+</head>
+<body>
+<h1 id="expression-problem-1-从-pattern-matching-到-visitor-pattern">Expression Problem (1): 从 Pattern Matching 到 Visitor Pattern</h1>
+<p>本来我是想直接从 LLVM’s style RTTI 开始讲 AST 的实现 idiom 的, 不过稍微研究了一下发现, AST 的设计模式 (pattern) 本身也很值得研究. 所以我临时改了主意, 我打算以 expression problem 为引, 先讲一些有趣的东西.</p>
+<h2 id="expression-problem">Expression Problem</h2>
+<p>Expression problem 是一个讨论各种编程范式 (programming paradigms) 和编程语言的优劣势时常用的例子. 它由 Philip Wadler 在 Rice University’s Programming Language Team (就是 Racket aka. PLT Scheme 的那个 PLT) 的一次<a href="http://homepages.inf.ed.ac.uk/wadler/papers/expression/expression.txt">讨论</a>中提出.</p>
+<blockquote>
+<p>The goal is to define a datatype by cases, where one can add new cases to the datatype and new functions over the datatype, without recompiling existing code, and while retaining static type safety (e.g., no casts).</p>
+</blockquote>
+<p>一言以蔽之, 扩展性 (extensibility) 和静态类型安全 (type safe).</p>
+<p>下面我举两个不同类型的语言的例子:</p>
+<h2 id="例子-1-用-adt-实现-ast">例子 1: 用 ADT 实现 AST</h2>
+<p>考虑这样一个语言: 它由整数字面量 (literal) 和 <code>+</code> 运算符组成, 它的 AST 在 Haskell 里可以被这样表示:</p>
+<pre><code>data Expr where
+  Lit :: Int -&gt; Expr
+  Add :: Expr -&gt; Expr -&gt; Expr</code></pre>
+<p><code>Expr</code> 类型拥有 <code>Lit</code> 和 <code>Add</code> 两个 data constructor.</p>
+<p>现在我们给这个语言写一个 interpreter:</p>
+<pre><code>eval :: Expr -&gt; Int
+eval (Lit n)   = n
+eval (Add l r) = eval l + eval r</code></pre>
+<p>有了上边这些 “已有代码” 之后, 我们开始考虑 expression problem 中的问题. 首先, 尝试给 <code>Expr</code> 增加一个新的函数, 用于打印整棵 AST.</p>
+<pre><code>dump :: Expr -&gt; String
+dump (Lit n)   = &quot;(Lit &quot; ++ show n ++ &quot;)&quot;
+dump (Add l r) = &quot;(Add &quot; ++ dump l ++ &quot; &quot; ++ dump r ++ &quot;)&quot;</code></pre>
+<p>还很容易.</p>
+<p>但当我们试图给 <code>Expr</code> 新增一个构造时候, 问题就被暴露出来了. 我们必须给 <code>Expr</code> 添上一个新的 data constructor, 意味着需要修改原有代码:</p>
+<pre><code>             data Expr where
+               Lit :: Int -&gt; Expr
+               Add :: Expr -&gt; Expr -&gt; Expr
+/*addition*/   Sub :: Expr -&gt; Expr -&gt; Expr</code></pre>
+<p>由于 <code>eval</code> 和 <code>dump</code> 函数都是用 pattern matching 实现的, 这些函数也必须对 <code>Sub</code> 进行补充.</p>
+<pre><code>             eval :: Expr -&gt; Int
+             eval (Lit n)   = n
+             eval (Add l r) = eval l + eval r
+/*addition*/ eval (Sub l r) = eval l - eval r
+
+             dump :: Expr -&gt; String
+             dump (Lit n)   = &quot;(Lit &quot; ++ show n ++ &quot;)&quot;
+             dump (Add l r) = &quot;(Add &quot; ++ dump l ++ &quot; &quot; ++ dump r ++ &quot;)&quot;
+/*addition*/ dump (Sub l r) = &quot;(Sub &quot; ++ dump l ++ &quot; &quot; ++ dump r ++ &quot;)&quot;</code></pre>
+<h2 id="例子-2-用-subtyping-实现-ast">例子 2: 用 Subtyping 实现 AST</h2>
+<p>接下来我们换一门 OOP 语言 Swift.</p>
+<pre><code>protocol Expr {
+    func eval() -&gt; Int
+}
+
+class Lit: Expr {
+    let n: Int
+    func eval() -&gt; Int { n }
+}
+
+class Add: Expr {
+    let left, right: Expr
+    func eval() -&gt; Int { left.eval() + right.eval() }
+}</code></pre>
+<p>巧的是, 和 Haskell 恰恰相反, 当我们想给 <code>Expr</code> 新增一个构造 <code>Sub</code> 时, 要做的只是添加一个新的类 <code>Sub</code>, 完全不用改动已有的代码.</p>
+<pre><code>class Sub: Expr {
+    let left, right: Expr
+    func eval() -&gt; Int { left.eval() - right.eval() }
+}</code></pre>
+<p>但添加新函数 <code>dump</code> 时, 反而要改动很多地方.</p>
+<pre><code>             protocol Expr {
+                 func eval() -&gt; Int
+/*addition*/     func dump() -&gt; String
+             }
+
+             class Lit: Expr {
+                 let n: Int
+                 func eval() -&gt; Int { n }
+/*addition*/     func dump() -&gt; String { &quot;(Lit \(n))&quot; }
+             }
+
+             class Add: Expr {
+                 let left, right: Expr
+                 func eval() -&gt; Int { left.eval() + right.eval() }
+/*addition*/     func dump() -&gt; String { &quot;(Add \(left) \(right))&quot; }
+             }
+
+             class Sub: Expr {
+                 let left, right: Expr
+                 func eval() -&gt; Int { left.eval() - right.eval() }
+/*addition*/     func dump() -&gt; String { &quot;(Sub \(left) \(right))&quot; }
+             }</code></pre>
+<p>其中的原因不难理解. 类的继承 (inherit) 是 “open” 的, 而 sum type 则是 “closed” 的, 编译器能处理好 dynamic dispatch 和 RTTI, 却无法自动为 pattern matching 添加分支代码, 因此 OOP 的实现在新增构造时更容易. 另一边, 在 OOP 语言中, 每个函数中蕴含的逻辑和它的构造耦合在一起, 需要新增函数时, 我们就必须把对应的逻辑逐个插入到不同的类中, 因此使用 ADT 的语言新增函数更容易. 这两类语言的 idiom 各自解决了 expression problem 的一半.</p>
+<p>Swift 有类扩展 (extension) 的功能, 能扩展一个已有的类型, 可以直接解决这个问题. 不过这不是我们今天的重点, 因此你需要暂时先把它假想成 Java 那样的语言.</p>
+<h2 id="visitor-pattern">Visitor Pattern</h2>
+<p>既然造成 OOP 语言新增函数困难的罪魁祸首是: 每个构造都和处理它的不同逻辑相耦合, 那我们把它解耦不就好了? 以下边这段代码为例, 我们是不是可以考虑把 <code>eval</code> 和 <code>dump</code> 函数共性的东西提取出来, 抽象成一个新接口?</p>
+<pre><code>            class Add: Expr {
+                let left, right: Expr
+/*deletion*/     func eval() -&gt; Int { left.eval() + right.eval() }
+/*deletion*/     func dump() -&gt; String { &quot;(Add \(left) \(right))&quot; }
+/*addition*/     func someInterface() -&gt; SomeType { ... }
+            }</code></pre>
+<p>这就是访问者模式 (visitor pattern) 的原理.</p>
+<pre><code>protocol Expr {
+    func visited&lt;V&gt;(by visitor: V) -&gt; V.Result where V : Visitor
+}
+
+protocol Visitor {
+    associatedtype Result
+    func lit(_ literal: Lit) -&gt; Result
+    func add(_ add: Add) -&gt; Result
+}
+
+class Lit: Expr {
+    let n: Int
+    func visited&lt;V&gt;(by visitor: V) -&gt; V.Result where V : Visitor {
+        visitor.lit(self)
+    }
+}
+
+class Add: Expr {
+    let left, right: Expr
+    func visited&lt;V&gt;(by visitor: V) -&gt; V.Result where V : Visitor {
+        visitor.add(self)
+    }
+}</code></pre>
+<p>现在, 我们为 <code>Expr</code> 实现一个 “访问者” <code>Eval</code> 作为例子:</p>
+<pre><code>class Eval: Visitor {
+    typealias Result = Int
+    func lit(_ literal: Lit) -&gt; Int {
+        literal.n
+    }
+    func add(_ add: Add) -&gt; Int {
+        add.left.visited(by: self) + add.right.visited(by: self)
+    }
+}</code></pre>
+<p>类似地, 实现 <code>Dump</code> 也不是件难事</p>
+<pre><code>class Dump: Visitor {
+    typealias Result = String
+    func lit(_ literal: Lit) -&gt; String {
+        &quot;(Lit \(literal.n))&quot;
+    }
+    
+    func add(_ add: Add) -&gt; String {
+        &quot;(Add \(add.left.visited(by: self)) \(add.right.visited(by: self)))&quot;
+    }
+}</code></pre>
+<p>让我们把视线拉回到 Haskell 的 <code>eval</code> 实现上</p>
+<pre><code>eval :: Expr -&gt; Int
+eval (Lit n)   = n
+eval (Add l r) = eval l + eval r</code></pre>
+<p>容易观察到, Swift 中的 <code>Eval</code> 和 Haskell 中的 <code>eval</code> 在形式上是一致的, 其实 visitor pattern 之于 GoF, 就相当于 pattern matching 之于 ADT. 当然, 这么说同时也就意味着, visitor pattern 并不是一个 expression problem 的合格解, <code>Visitor</code> 的域就像 ADT 的 data constructor 一样, 想要扩展它们, 除了修改源码外别无他法.</p>
+<pre><code>             protocol Visitor {
+                 associatedtype Result
+                 func lit(_ literal: Lit) -&gt; Result
+                 func add(_ add: Add) -&gt; Result
+/*addition*/     func sub(_ sub: Sub) -&gt; Result
+             }</code></pre>
+<p>这似乎是件蠢事, 把 subtyping 实现方式的缺陷转换成了 ADT 实现方式的缺陷, 却没有解决实质问题.</p>
+<p>事实确实如此, 但我之所以要花长篇幅介绍 visitor pattern, 还有些潜在的原因:</p>
+<ul>
+<li>实现 visitor pattern 不需要足够好的类型系统, 也不需要 ADT 和 pattern matching 这类 ML 家族语言的特性, 只要支持 dynamic dispatch 就可以, 不少比较落后的语言也能做到.</li>
+<li>真正实现编译器或解释器时并不需要解决 expression problem, 适当的修改已有代码不是坏事, 那些真正解决了 expression problem 的方案反而可能会让项目架构变得混乱.</li>
+<li>Visitor pattern 可以和一些 OOP 的辅助设施融洽相处, 更充分地发挥类的潜在威力.</li>
+</ul>
+<p>接下来我会介绍一些 visitor pattern 实现的细节, 如果你只对 expression problem 相关的内容感兴趣, 可以跳过后半部分, 等下一篇文章<!-- TODO -->.</p>
+<h2 id="visitor-pattern-和多级-ast">Visitor Pattern 和多级 AST</h2>
+<p>上文中出现的 AST 是一个比较理想化的例子, 它的层次结构极其简单 (下例左), 这在任何语言的编译器中都几乎是不可能出现的情况. 为了模拟真实情况, 我把 <code>Add</code> 和 <code>Sub</code> 另划一类, 加入了用于统一表示二元运算符的层次 <code>Op</code> (下例右).</p>
+<pre><code>Expr           Expr
+|-Lit          |-Lit
+|-Add          `-Op
+`-Sub            |-Add
+                 `-Sub</code></pre>
+<p>对 Haskell 来说, 只要设置双层的 ADT 就可以了.</p>
+<pre><code>data Expr where
+Lit :: Int -&gt; Expr
+Op :: Op -&gt; Expr
+
+data Op where
+Add :: Expr -&gt; Expr -&gt; Op
+Sub :: Expr -&gt; Expr -&gt; Op</code></pre>
+<p>实现 <code>eval</code> 函数时, 也需要双层的 pattern matching.</p>
+<pre><code>eval :: Expr -&gt; Int
+eval (Lit n) = n
+eval (Op op) =
+  case op of (Add l r) -&gt; eval l + eval r
+             (Sub l r) -&gt; eval l - eval r</code></pre>
+<p>这种层次结构在实践中很有必要, 因为当 AST 足够复杂时, 会需要一些辅助函数, 这些函数并不都是针对 <code>Expr</code> 的, 有可能只适用于 <code>Op</code>, 如果这时候 <code>Add</code> 和 <code>Sub</code> 没有被单独划为一类, 而是和其他 <code>Expr</code> 一样放在一起, 类型检查器就无法有效地工作. 你可能会写出这样的代码:</p>
+<pre><code>             commutative :: Expr -&gt; Bool
+             commutative (Add _ _) = True
+             commutative (Sub _ _) = False
+/*addition*/ commutative (Lit _)   = error &quot;not an operator&quot; -- No, ⊥!</code></pre>
+<p>虽然我有让你必须这么做的理由, 但也不得不承认, Haskell 的实现有些恼人. 如果你想构造一个 <code>Op</code> 类型的实例, 写法将会是 <code>(Op (Add l r))</code> 而不是 <code>(Add l r)</code>, 随着 AST 层级结构越来越多, 这个套娃也会越来越臃肿, 每一层的名字都会参与到这个构造过程中. 想象一下, 在一门更复杂的语言里, 你很有可能会遇到 <code>(Ast (Expr (BinOp (Add (Lit (Num (Int 1))) (Lit (Num (Int 2)))))))</code> 这样的构造, 而这个庞然大物却仅仅是一个加法运算的 AST 节点. 这些层叠的结构名会喧宾夺主, 让人很难理清这段代码到底在构造什么.</p>
+<pre><code>eval (Add (Add (Lit 1) (Lit 2)) (Lit 3))           -- 增加层级结构前
+eval (Op (Add (Op (Add (Lit 1) (Lit 2))) (Lit 3))) -- 增加层级结构后</code></pre>
+<p>而 Swift 中使用 visitor pattern 的实现就没有这个问题, 因为 class hierarchy 会以 RTTI 的形式隐晦地存在于代码中, <code>Add</code> 当然可以既是 <code>Op</code> 的 subtype, 又同时是 <code>Expr</code> 的 subtype.</p>
+<pre><code>protocol Expr {
+    func visited&lt;V&gt;(by visitor: V) -&gt; V.Result where V : Visitor
+}
+
+protocol Visitor {
+    associatedtype Result
+    
+    func expr(_ expr: Expr) -&gt; Result
+    func lit(_ literal: Lit) -&gt; Result
+    func op(_ op: Op) -&gt; Result
+    func add(_ add: Add) -&gt; Result
+    func sub(_ sub: Sub) -&gt; Result
+}
+
+class Lit: Expr {
+    let n: Int
+    func visited&lt;V&gt;(by visitor: V) -&gt; V.Result where V : Visitor {
+        visitor.lit(self)
+    }
+    
+    init(_ n: Int) {
+        self.n = n
+    }
+}
+
+class Op: Expr {
+    let left, right: Expr
+    func visited&lt;V&gt;(by visitor: V) -&gt; V.Result where V : Visitor {
+        visitor.op(self)
+    }
+    init(_ left: Expr, _ right: Expr) {
+        self.left = left
+        self.right = right
+    }
+}
+
+class Add: Op {
+    override func visited&lt;V&gt;(by visitor: V) -&gt; V.Result where V : Visitor {
+        visitor.add(self)
+    }
+}
+
+class Sub: Op {
+    override func visited&lt;V&gt;(by visitor: V) -&gt; V.Result where V : Visitor {
+        visitor.sub(self)
+    }
+}
+
+class Dump: Visitor {
+    typealias Result = String
+    func expr(_ expr: Expr) -&gt; String {
+        &quot;(Expr)&quot;
+    }
+    func lit(_ literal: Lit) -&gt; String {
+        &quot;(Lit \(literal.n))&quot;
+    }
+    func op(_ op: Op) -&gt; String {
+        &quot;(Op \(op.left.visited(by: self)) \(op.right.visited(by: self)))&quot;
+    }
+    func add(_ add: Add) -&gt; String {
+        &quot;(Add \(add.left.visited(by: self)) \(add.right.visited(by: self)))&quot;
+    }
+    func sub(_ sub: Sub) -&gt; String {
+        &quot;(Sub \(sub.left.visited(by: self)) \(sub.right.visited(by: self)))&quot;
+    }
+}</code></pre>
+<p>到目前为止, 类的威力还没有完全展露, 现在, 我们给 <code>Visitor</code> 接口增加一系列默认实现, 当一个访问器不被 override 所定制时, 它总是会默认地调用它上一级层次结构的访问器.</p>
+<pre><code>extension Visitor {
+    func lit(_ literal: Lit) -&gt; Result { self.expr(literal) }
+    func op(_ op: Op) -&gt; Result { self.expr(op) }
+    func add(_ add: Add) -&gt; Result { self.op(add) }
+    func sub(_ sub: Sub) -&gt; Result { self.op(sub) }
+}</code></pre>
+<p>如果加入一个新的 AST 节点 <code>Multi</code>.</p>
+<pre><code>             extension Visitor {
+                 func lit(_ literal: Lit) -&gt; Result { self.expr(literal) }
+                 func op(_ op: Op) -&gt; Result { self.expr(op) }
+                 func add(_ add: Add) -&gt; Result { self.op(add) }
+                 func sub(_ sub: Sub) -&gt; Result { self.op(sub) }
+/*addition*/     func multi(_ multi: Multi) -&gt; Result { self.op(sub) }
+             }
+
+/*addition*/ class Multi: Op {
+/*addition*/     override func visited&lt;V&gt;(by visitor: V) -&gt; V.Result where V : Visitor {
+/*addition*/         visitor.multi(self)
+/*addition*/     }
+/*addition*/ }</code></pre>
+<p>在没有修改 <code>Dump</code> visitor 的情况下, 程序并没有发生错误, <code>Visitor.multi</code> 调用了它的默认实现, 用 <code>Dump.op</code> 打印出了一个 “虽然不那么漂亮, 但仍然好用” 的结果.</p>
+<pre><code>Multi(Lit(1), Add(Lit(2), Lit(3)))
+    .visited(by: Dump())
+// Print &quot;(Op (Lit 1) (Add (Lit 2) (Lit 3)))&quot;</code></pre>
+<p>你会发现, 在 visitor pattern 中, 你可以很好地控制程序的粒度. 假设我们现在需要一个 <code>Count</code> visitor 来计算 AST 的节点数量, 对 <code>Op</code> 来说, 我们就不需要知道它具体是 <code>Add</code> 还是 <code>Sub</code>, 只取得它的左右子树. 这时我们可以不必 override <code>Visitor.add</code> 和 <code>Visitor.sub</code>, 关注更粗粒度的 <code>Visitor.op</code> 就可以了.</p>
+<pre><code>class Count: Visitor {
+    typealias Result = Int
+    func expr(_ expr: Expr) -&gt; Int { fatalError(&quot;unreachable&quot;) }
+    func lit(_ literal: Lit) -&gt; Int { 1 }
+    func op(_ op: Op) -&gt; Int {
+        1 + op.left.visited(by: self) + op.right.visited(by: self)
+    }
+}
+
+Add(Lit(1), Multi(Lit(2), Lit(3))).visited(by: Count()) // Print &quot;5&quot;</code></pre>
+<h2 id="adt-和-subtyping-之间一点微妙的关系">ADT 和 Subtyping 之间一点微妙的关系</h2>
+<p>在用 Haskell 中实现 <code>Op</code> 时, 有两种可选的方案:</p>
+<pre><code>-- (1)
+data Expr where
+Op :: Op -&gt; Expr
+...
+data Op where
+Add :: Expr -&gt; Expr -&gt; Op
+Sub :: Expr -&gt; Expr -&gt; Op
+Multi :: Expr -&gt; Expr -&gt; Op
+
+-- (2)
+data Expr where
+Op :: OpExpr -&gt; Expr
+...
+data OpExpr where
+OpExpr :: Op -&gt; OpExpr
+data Op where
+Add :: Op
+Sub :: Op
+Multi :: Op</code></pre>
+<p>这两种方案理论上是等价的, 但我们应该选择哪种呢?</p>
+<p>我更推荐后者.</p>
+<p>假设我们现在需要一个 <code>getFirstOperand</code> 函数来获取 <code>Op</code> 的第一个操作数, 这两种方案对应的函数分别是:</p>
+<pre><code>-- (1)
+getFirstOperand :: Op -&gt; Expr
+getFirstOperand (Add l _) = l
+getFirstOperand (Sub l _) = l
+getFirstOperand (Multi l _) = l
+
+-- (2)
+getFirstOperand :: Op -&gt; Expr
+getFirstOperand (OpExpr l _) = l</code></pre>
+<p>你会发现, 前者总是被迫去关注所有类型的节点, 而后者则可以视实际情况选择, 当不需要关心 <code>Op</code> 究竟是什么时, 后者总是能提供更简洁的代码.</p>
+<p>如果你读过 <em>Type and Programming Language</em>, 你应该记得, 书中示例代码中的 AST 用的就是前者这种糟糕的设计, 它的每个 AST 节点的 data constructor 都有一个用于表示源码位置信息的 <code>info</code> 参数.</p>
+<pre><code>type term = TmTrue   of info
+          | TmFalse  of info
+          | TmIf     of info * term * term * term
+          | TmZero   of info
+          | TmSucc   of info * term
+          | TmPred   of info * term
+          | TmIsZero of info * term</code></pre>
+<p>如果我们想写一个 <code>get_info</code> 函数, 恐怕要写成这样:</p>
+<pre><code>let get_info t =
+    match t with TmTrue(info)     = info
+               | TmFalse(info)    = info
+               | TmIf(info,_,_,_) = info
+               | TmZero(info)     = info
+               | TmSucc(info,_)   = info
+               | TmPred(info,_)   = info
+               | TmIsZero(info,_) = info</code></pre>
+<p>当然, 作为例子是没问题的, 但如果你在写一个正式的编译器, 可能就需要好好考虑一下了.</p>
+<p>这个问题在 OOP 中同样存在, 想一想, 下边哪种的写法在 Swift 中才是更可取的, 为什么?</p>
+<pre><code>// (1)
+class Op: Expr { let left, right: Expr }
+class Add: Op {}
+class Sub: Op {}
+
+// (2)
+class Op: Expr {}
+class Add: Op { let left, right: Expr }
+class Sub: Op { let left, right: Expr }</code></pre>
+<h2 id="结尾">结尾</h2>
+<p>接下来的一周我不会继续写 expression problem 的文章了, 可能会在下边的话题里选一个:</p>
+<ul>
+<li>C++ RTTI 和 LLVM’s style RTTI</li>
+<li>使用 LLVM 工具将源文件读入内存</li>
+</ul>
+</body>
+</html>

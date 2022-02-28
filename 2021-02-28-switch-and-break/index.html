@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>KS. Journal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../static/css/normalize-v8.0.1.css">
+<link rel="stylesheet" href="../static/css/katex-font.css">
+<link rel="stylesheet" href="../static/css/kkshinkai-v10.0.1.css">
+</head>
+<body>
+<h1 id="switch-和-break-的故事"><code>switch</code> 和 <code>break</code> 的故事</h1>
+<p>写在前边: 本文中的 <code>switch</code> 特指 C 中的 <code>swicth</code> 语句, 而诸如 Swift 等语言中的 <code>switch</code> 语句, 本质上是模式匹配 (pattern matching), 和本文无关喵.</p>
+<h2 id="跳转表">跳转表</h2>
+<p>我一直都非常喜欢 C 的 <code>switch</code> 语句, 因为它既有高级语言的外表, 又不失汇编的神韵.</p>
+<p>有些人在刚开始学编程的时候会把 <code>switch</code> 语句理解成 <code>if-else</code> 语句的语法糖, 这是个典型的谬误, 正确的理解应该是将它看作一段带 <code>case</code> 标签 (label) 的代码.</p>
+<p>达夫设备 (Duff’s device) 就是将这种机制运用到极致的一个例子:</p>
+<pre><code>switch (count % 8) {
+case 0:    do { *to = *from++;
+case 7:         *to = *from++;
+case 6:         *to = *from++;
+case 5:         *to = *from++;
+case 4:         *to = *from++;
+case 3:         *to = *from++;
+case 2:         *to = *from++;
+case 1:         *to = *from++;
+           } while(--n &gt; 0);
+}</code></pre>
+<p>编译器会为它生成一个数组, 你可以通过索引以 <svg xmlns:xlink="http://www.w3.org/1999/xlink" width="4.745ex" height="2.843ex" style="vertical-align: -0.838ex;" viewBox="0 -863.1 2043 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<path stroke-width="1" id="E1-MJMATHI-4F" d="M740 435Q740 320 676 213T511 42T304 -22Q207 -22 138 35T51 201Q50 209 50 244Q50 346 98 438T227 601Q351 704 476 704Q514 704 524 703Q621 689 680 617T740 435ZM637 476Q637 565 591 615T476 665Q396 665 322 605Q242 542 200 428T157 216Q157 126 200 73T314 19Q404 19 485 98T608 313Q637 408 637 476Z"></path>
+<path stroke-width="1" id="E1-MJMAIN-28" d="M94 250Q94 319 104 381T127 488T164 576T202 643T244 695T277 729T302 750H315H319Q333 750 333 741Q333 738 316 720T275 667T226 581T184 443T167 250T184 58T225 -81T274 -167T316 -220T333 -241Q333 -250 318 -250H315H302L274 -226Q180 -141 137 -14T94 250Z"></path>
+<path stroke-width="1" id="E1-MJMAIN-31" d="M213 578L200 573Q186 568 160 563T102 556H83V602H102Q149 604 189 617T245 641T273 663Q275 666 285 666Q294 666 302 660V361L303 61Q310 54 315 52T339 48T401 46H427V0H416Q395 3 257 3Q121 3 100 0H88V46H114Q136 46 152 46T177 47T193 50T201 52T207 57T213 61V578Z"></path>
+<path stroke-width="1" id="E1-MJMAIN-29" d="M60 749L64 750Q69 750 74 750H86L114 726Q208 641 251 514T294 250Q294 182 284 119T261 12T224 -76T186 -143T145 -194T113 -227T90 -246Q87 -249 86 -250H74Q66 -250 63 -250T58 -247T55 -238Q56 -237 66 -225Q221 -64 221 250T66 725Q56 737 55 738Q55 746 60 749Z"></path>
+</defs>
+<g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)">
+ <use xlink:href="#E1-MJMATHI-4F" x="0" y="0"></use>
+ <use xlink:href="#E1-MJMAIN-28" x="763" y="0"></use>
+ <use xlink:href="#E1-MJMAIN-31" x="1153" y="0"></use>
+ <use xlink:href="#E1-MJMAIN-29" x="1653" y="0"></use>
+</g>
+</svg> 的复杂度获得要调转到的 PC 地址.</p>
+<pre><code>.LS:    @ jump table
+        .word   .L0+1 
+        .word   .L7+1
+        .word   .L6+1
+        .word   .L5+1
+        .word   .L4+1
+        .word   .L3+1
+        .word   .L2+1
+        .word   .L1+1
+.LN:
+        nop
+.L0:
+        mov     r3, r4
+        adds    r4, r3, #2
+        ldrsh   r3, [r3]
+        strh    r3, [r5]
+.L7:
+        mov     r3, r4
+        adds    r4, r3, #2
+        ldrsh   r3, [r3]
+        strh    r3, [r5]
+.L6:
+        mov     r3, r4
+        adds    r4, r3, #2
+        ldrsh   r3, [r3]
+        strh    r3, [r5]
+.L5:
+        mov     r3, r4
+        adds    r4, r3, #2
+        ldrsh   r3, [r3]
+        strh    r3, [r5]
+.L4:
+        mov     r3, r4
+        adds    r4, r3, #2
+        ldrsh   r3, [r3]
+        strh    r3, [r5]
+.L3:
+        mov     r3, r4
+        adds    r4, r3, #2
+        ldrsh   r3, [r3]
+        strh    r3, [r5]
+.L2:
+        mov     r3, r4
+        adds    r4, r3, #2
+        ldrsh   r3, [r3]
+        strh    r3, [r5]
+.L1:
+        mov     r3, r4
+        adds    r4, r3, #2
+        ldrsh   r3, [r3]
+        strh    r3, [r5]
+        subs    r6, r6, #1
+        cmp     r6, #0
+        bgt     .L13</code></pre>
+<p>这就是跳转表 (jump table) 啦.</p>
+<p>有没有发现它很像我们所熟悉的表驱动法 (table-driven method)?</p>
+<pre><code>let week = [&quot;mo&quot;, &quot;tu&quot;, &quot;we&quot;, &quot;th&quot;, &quot;fr&quot;, &quot;sa&quot;, &quot;su&quot;]
+let today = week[n]
+print(today)</code></pre>
+<p>它们的本质其实是一样的, 只不过前者驱动的是 PC, 后者驱动的是数据 (当然所谓的 “数据”, 也包括函数指针嘛).</p>
+<p>优化 <code>swicth</code> 语句的方法也并非只有跳转表一种. 如果 <code>switch</code> 中的各个 <code>case</code> 的间隙太多, 就不适合用数组索引表示这种映射关系了. 表驱动法用哈希表或树来解决这个问题, 而编译器则会生成使用二分法进行跳转的代码, 思路也是相近的.</p>
+<h2 id="break">Break</h2>
+<p>所以, 上一边这么长的内容, 和 <code>break</code> 有什么关系呢?</p>
+<p>很多人认为 <code>swicth</code> 的每个分支都必须手动添加 <code>break</code> 语句, 否则默认穿透 (fall through) 是一个糟糕的设计. 因为在他们眼中, <code>switch</code> 语句是这样的一种结构.</p>
+<p><img src="images/switch-1.jpg" height=260 /></p>
+<p>如果从上边这个角度看, <code>break</code> 语句确实有点突兀. 但我倒觉得, 我们应该把 <code>switch</code> 语句花括号中的所有的代码看成一个整体, 把 <code>case</code> 看成是穿插其中的无关紧要的标签 (label).</p>
+<p><img src="images/switch-2.jpg" height=260 /></p>
+<p>这样, 必须手动写 <code>break</code> 就变成一件优雅的设定了喵.</p>
+<h2 id="switch-和-string">Switch 和 String</h2>
+<p>Java 中的 <code>switch</code> 语句和 C 或 C++ 相比, 不仅支持整型 (包括枚举), 还额外支持 <code>String</code> 类型. 不难想到, <code>String</code> 类型其实是没法直接作为跳转表的索引的, 那在 Java 里, <code>switch</code> 语句岂不是要退化成 <code>if-else</code> 语句的语法糖了?</p>
+<p>其实呢, Java 会通过哈希来将 <code>String</code> 变为整型, 比如下面这段代码</p>
+<pre><code>switch (str) {
+    ...
+    case &quot;XXX&quot;:
+        code for XXX
+    case &quot;YYY&quot;:
+        code for YYY
+}</code></pre>
+<p>编译后会变成</p>
+<pre><code>switch (str.hashCode()) {
+    ...
+    case 87384:
+        code for XXX
+    case 88377:
+        code for YYY
+}</code></pre>
+<p>当然, 我们还必须要讨论一下可能出现的哈希碰撞:</p>
+<p>第一种碰撞, 是同一个 <code>swicth</code> 语句中不同 <code>case</code> 的碰撞. 假设上例中 <code>"XXX"</code> 和 <code>"YYY"</code> 的哈希值相同, 那就出现了两个一样的 <code>case</code>, 这显然是不行的. Java 会将这二者放进同一个 <code>case</code>, 再用 <code>if-else</code> 语句单独判断:</p>
+<pre><code>switch (str.hashCode()) {
+    ...
+    case 87384: // 假设 &quot;XXX&quot; 和 &quot;YYY&quot; 的哈希值都是它
+        if (str.equals(&quot;XXX&quot;))
+            code for XXX
+        else
+            code for YYY
+}</code></pre>
+<p>第二种碰撞, 是输入字符串和 <code>case</code> 的碰撞. 假设 <code>"ZZZ"</code> 和 <code>"XXX"</code> 的哈希值相同, 那当 <code>str</code> 是 <code>"ZZZ"</code> 时, 程序就会错误地走进为 <code>"XXX"</code> 准备的分支. 这时候还需要一个额外的判断:</p>
+<pre><code>switch (str.hashCode()) {
+    ...
+    case 87384:
+        if (str.equals(&quot;XXX&quot;))
+            code for XXX
+    case 88377:
+        if (str.equals(&quot;YYY&quot;))
+            code for YYY
+}</code></pre>
+<p>当然, 如果 <code>switch</code> 分支很少, 也是可能直接被优化成 <code>if-else</code> 语句的, 不过这和本文主题无关, 就不赘述了喵.</p>
+<h2 id="结尾">结尾</h2>
+<p>嘛 … 其实这些内容应该没人会不知道叭, 我写这么多主要只是想为 C 里带 <code>break</code> 的 <code>switch</code> 说句公道话, 它真的很棒诶, 可不是什么设计失误.</p>
+</body>
+</html>
