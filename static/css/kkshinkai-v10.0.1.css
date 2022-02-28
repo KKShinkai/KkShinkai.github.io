@@ -72,7 +72,9 @@ img[align=left] {
 
 code {
   font-family: KaTeX_Typewriter, monospace;
-  font-size: 95%;
+  font-size: 100%;
+  display: inline-block;
+  padding-top: -1px;
 }
 
 pre {
@@ -89,6 +91,7 @@ pre>code {
   white-space: pre;
   background: transparent;
   border: 0;
+  display: block;
 }
 
 table {
