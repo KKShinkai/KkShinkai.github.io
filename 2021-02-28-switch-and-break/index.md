@@ -1,3 +1,7 @@
+---
+title: Switch 和 Break 的故事
+---
+
 # `switch` 和 `break` 的故事
 
 写在前边: 本文中的 `switch` 特指 C 中的 `swicth` 语句, 而诸如 Swift 等语言中的 `switch` 语句, 本质上是模式匹配 (pattern matching), 和本文无关喵.
@@ -25,7 +29,7 @@
 编译器会为它生成一个数组, 你可以通过索引以 $O(1)$ 的复杂度获得要调转到的 PC 地址.
 
     .LS:    @ jump table
-            .word   .L0+1 
+            .word   .L0+1
             .word   .L7+1
             .word   .L6+1
             .word   .L5+1

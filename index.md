@@ -1,9 +1,5 @@
 # Kk Shinkai's Journal
 
-<!-- ## Recent Posts (2022.01.01 - now) -->
-
-## Legacy Posts (up to 2020.12.31)
-
 -   2021.03.01 / [解构赋值的陷阱](./2021-03-01-pitfalls-of-destruct/index.html)
 -   2021.02.28 / [Swift 中 `inout` 参数的求值策略](./2021-02-28-swift-inout/index.html)
 -   2021.02.28 / [`switch` 和 `break` 的故事](./2021-02-28-switch-and-break/index.html)

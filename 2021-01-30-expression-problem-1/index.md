@@ -1,3 +1,7 @@
+---
+title: "Expression Problem (1): 从 Pattern Matching 到 Visitor Pattern"
+---
+
 # Expression Problem (1): 从 Pattern Matching 到 Visitor Pattern
 
 本来我是想直接从 LLVM's style RTTI 开始讲 AST 的实现 idiom 的, 不过稍微研究了一下发现, AST 的设计模式 (pattern) 本身也很值得研究. 所以我临时改了主意, 我打算以 expression problem 为引, 先讲一些有趣的东西.
@@ -171,7 +175,7 @@ Swift 有类扩展 (extension) 的功能, 能扩展一个已有的类型, 可以
         func lit(_ literal: Lit) -> String {
             "(Lit \(literal.n))"
         }
-        
+
         func add(_ add: Add) -> String {
             "(Add \(add.left.visited(by: self)) \(add.right.visited(by: self)))"
         }
@@ -250,7 +254,7 @@ Swift 有类扩展 (extension) 的功能, 能扩展一个已有的类型, 可以
 
     protocol Visitor {
         associatedtype Result
-        
+
         func expr(_ expr: Expr) -> Result
         func lit(_ literal: Lit) -> Result
         func op(_ op: Op) -> Result
@@ -263,7 +267,7 @@ Swift 有类扩展 (extension) 的功能, 能扩展一个已有的类型, 可以
         func visited<V>(by visitor: V) -> V.Result where V : Visitor {
             visitor.lit(self)
         }
-        
+
         init(_ n: Int) {
             self.n = n
         }

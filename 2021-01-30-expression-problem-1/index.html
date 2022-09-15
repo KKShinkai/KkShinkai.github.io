@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <title>KS. Journal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Expression Problem (1): 从 Pattern Matching 到 Visitor Pattern" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="zh_CN" />
+<meta property="og:image" content="https://kkshinkai.moe/cover.jpeg" />
+<meta property="og:site_name" content="Kk Shinkai's Journal" />
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -145,7 +150,7 @@ class Add: Expr {
     func lit(_ literal: Lit) -&gt; String {
         &quot;(Lit \(literal.n))&quot;
     }
-    
+
     func add(_ add: Add) -&gt; String {
         &quot;(Add \(add.left.visited(by: self)) \(add.right.visited(by: self)))&quot;
     }
@@ -205,7 +210,7 @@ eval (Op (Add (Op (Add (Lit 1) (Lit 2))) (Lit 3))) -- 增加层级结构后</cod
 
 protocol Visitor {
     associatedtype Result
-    
+
     func expr(_ expr: Expr) -&gt; Result
     func lit(_ literal: Lit) -&gt; Result
     func op(_ op: Op) -&gt; Result
@@ -218,7 +223,7 @@ class Lit: Expr {
     func visited&lt;V&gt;(by visitor: V) -&gt; V.Result where V : Visitor {
         visitor.lit(self)
     }
-    
+
     init(_ n: Int) {
         self.n = n
     }

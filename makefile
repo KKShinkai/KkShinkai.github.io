@@ -18,12 +18,11 @@ build: $(src:.md=.html)
 	pandoc --filter mathjax-pandoc-filter \
 		   --metadata title="Kk Shinkai's Journal" \
 		   --template="static/template/index.html" \
-			 --highlight-style=pygments \
+		   --highlight-style=pygments \
 		   --standalone -o index.html index.md
 
 $(src:.md=.html): %.html : %.md
 	pandoc --filter mathjax-pandoc-filter \
-		   --metadata title="Kk Shinkai's Journal" \
 		   --template="static/template/template.html" \
 		   --standalone -o $@ $<
 

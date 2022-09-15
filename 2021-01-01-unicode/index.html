@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <title>KS. Journal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Unicode 字符集与字符编码" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="zh_CN" />
+<meta property="og:image" content="https://kkshinkai.moe/cover.jpeg" />
+<meta property="og:site_name" content="Kk Shinkai's Journal" />
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -62,21 +67,21 @@
 <p>接着我们接触一个附加概念, 一个在编码字抽象层次之上的概念: 字素簇. <strong>字素簇</strong> (grapheme cluster) 指人直觉和认知上所认为是单个字符的文本元素. 一个字位簇可能就是一个抽象字, 也可能由多个抽象字组成. 字素簇应当是文本操作的基本单位, 高级文本元素在分割时, 通常不会从一个字素簇中间拆分. 比如一个排版程序在自动换行时将 <code>'Å'</code> 的 <code>'A'</code> 和 <code>'◌̊'</code> 拆到了两行中, 这显然是不可容忍的行为. 再比如反转字符串 <code>'ÅB'</code> (<code>"\u0041\u030A\u0042"</code>) 的时候, <code>"\u0041\u030A"</code> (<code>'Å'</code>) 应整体和 <code>'B'</code> 交换位置, 得到 <code>'BÅ'</code> (<code>"\u0042\u0041\u030A"</code>), 而不该是简单的反转码位的排列, 得到 <code>'B̊A'</code> (<code>"\u0041\u030A\u0042"</code>).</p>
 <p>组合字是字素簇的重要组成成分, 但字素簇并非只用于确保组合字的完整性, 其划分和具体的语言的种类, 算法的选择都一定关系, 斯洛伐克 (Slovak) 语中的 <code>"ch"</code> 或赛萨拉 (Sisaala) 语中的 <code>"ky"</code> 都被视为一个独立的字素簇, 尽管它们确实由两个分离的字母组成.</p>
 <p>Swift 的 <code>String</code> 类型默认以字位簇作为文本处理的基本单位.</p>
-<pre class="swift"><code>let str = &quot;\u{0041}\u{030A}\u{0042}&quot;
-
-str                    // &quot;ÅB&quot;
-String(str.reversed()) // &quot;BÅ&quot;
-
-Array(str) // [&quot;Å&quot;, &quot;B&quot;]</code></pre>
+<div class="sourceCode" id="cb1"><pre class="sourceCode swift"><code class="sourceCode swift"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> <span class="va">str</span> <span class="op">=</span> <span class="st">&quot;</span><span class="er">\u</span><span class="st">{0041}</span><span class="er">\u</span><span class="st">{030A}</span><span class="er">\u</span><span class="st">{0042}&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>str                    <span class="co">// &quot;ÅB&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>String<span class="op">(</span>str<span class="op">.</span>reversed<span class="op">())</span> <span class="co">// &quot;BÅ&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>Array<span class="op">(</span>str<span class="op">)</span> <span class="co">// [&quot;Å&quot;, &quot;B&quot;]</span></span></code></pre></div>
 <p>Java 如果直接使用 <code>StringBuilder</code> 的 <code>reverse()</code> 方法翻转字符串, 得到的结果是错的.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>var str <span class="op">=</span> <span class="st">&quot;</span><span class="sc">\u0041\u030A\u0042</span><span class="st">&quot;</span><span class="op">;</span></span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">var</span> str <span class="op">=</span> <span class="st">&quot;</span><span class="sc">\u0041\u030A\u0042</span><span class="st">&quot;</span><span class="op">;</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>str<span class="op">;</span>                              <span class="co">// &quot;ÅB&quot;</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">new</span> <span class="bu">StringBuilder</span><span class="op">(</span>str<span class="op">).</span><span class="fu">reverse</span><span class="op">();</span> <span class="co">// &quot;B̊A&quot;</span></span></code></pre></div>
 <p>使用正则表达式可以缓解这个问题, 在正则表达式语法中, <code>\X</code> 用于表达字素簇, 而 <code>\b{g}</code> 用于表达字素簇的边界, 使用 <code>.split("\\b{g}")</code> 方法就能够正确的按照字素簇将字符串分割为字素簇数组了.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>var str <span class="op">=</span> <span class="st">&quot;</span><span class="sc">\u0041\u030A\u0042</span><span class="st">&quot;</span><span class="op">;</span></span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">var</span> str <span class="op">=</span> <span class="st">&quot;</span><span class="sc">\u0041\u030A\u0042</span><span class="st">&quot;</span><span class="op">;</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>var cluster <span class="op">=</span> str<span class="op">.</span><span class="fu">split</span><span class="op">(</span><span class="st">&quot;</span><span class="sc">\\</span><span class="st">b{g}&quot;</span><span class="op">);</span> <span class="co">// String[2] { &quot;Å&quot;, &quot;B&quot; }</span></span></code></pre></div>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dt">var</span> cluster <span class="op">=</span> str<span class="op">.</span><span class="fu">split</span><span class="op">(</span><span class="st">&quot;</span><span class="sc">\\</span><span class="st">b{g}&quot;</span><span class="op">);</span> <span class="co">// String[2] { &quot;Å&quot;, &quot;B&quot; }</span></span></code></pre></div>
 <h2 id="编码形式">编码形式</h2>
 <p>接下里, 我们开始讨论码点的存储形式, 即 Unicode 代码单元和有限长度的码元序列之间的映射关系.</p>
 <p>Unicode 规范包含三种不同的<strong>编码形式</strong> (encode form): UTF-8, UTF-16 和 UTF-32 (UTF, Unicode/UCS transformation format), 分别使用 8-bit, 16-bit 和 32-bit 的<strong>码元</strong> (code unit) 序列来存储码点 (code point) 信息. 这三种编码形式都能够表示 Unicode 规范中的所有编码字, 它们之间可以无损转换, 不会造成数据丢失.</p>
