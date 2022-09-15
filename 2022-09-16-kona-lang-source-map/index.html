@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>KS. Journal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="twitter:card" content="summary"></meta>
+<meta property="og:title" content="Konac 杂记 (1): 源码管理器" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="zh_CN" />
+<meta property="og:image" content="https://kkshinkai.moe/cover.jpeg" />
+<meta property="og:site_name" content="Kk Shinkai's Journal" />
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../static/css/normalize-v8.0.1.css">
+<link rel="stylesheet" href="../static/css/katex-font.css">
+<link rel="stylesheet" href="../static/css/kkshinkai-v10.0.1.css">
+</head>
+<body>
+<h1 id="konac-杂记-1-源码管理器">Konac 杂记 (1): 源码管理器</h1>
+<p>Kona 是我目前正在实现的语言, 在计划中, 它是一个 ML 家族的方言, 语法和 Standard ML 相似, 但会额外支持行多态 (row polymorphism) 和多态变体 (polymorphic variant). 不过截止到当前, 我连词法解析器都还没开始写, 所以这里就不花篇幅介绍了, 你只需要知道 “Konac” 是一个编译器/解释器就好.</p>
+<h2 id="源码管理器">源码管理器</h2>
+<p>考虑一下, 如果我们想要输出像 Rustc 这样的诊断, 都需要什么样的位置信息?</p>
+<pre><code><strong style="color:red">error[E0277]</strong>: cannot add `&str` to `{integer}`
+<strong style="color:blue"> --&gt;</strong> src/main.rs:2:15
+<strong style="color:blue">  |</strong>
+<strong style="color:blue">2 |</strong>     let x = 1 + "one";
+<strong style="color:blue">  |</strong>               <strong style="color:red">^ no implementation for `{integer} + &str`</strong>
+<strong style="color:blue">  |</strong>
+<strong style="color:blue">  =</strong> help: the trait `Add<&str>` is not implemented for `{integer}`
+</code></pre>
+<p>有几个显而易见的答案:</p>
+<ol type="1">
+<li>我们需要知道发生错误的源文件的名字 (<code>src/main.rs</code>);</li>
+<li>我们需要知道错误发生在哪一行 (<code>2</code>) 哪一列 (<code>15</code>);</li>
+<li>我们需要知道发生错误的那一行的全部源码 (<code>let x = 1 + "one";</code>);</li>
+</ol>
+<p>在 Kona 的语法树中, 每个 token 乃至语法节点, 都需要一对这样的位置信息来表示它们的起止位置. 如果直接存储全部的这些内容, 就会造成巨大的空间浪费. 我们需要一个缓存机制, 让我们能用更小巧的方式来定位源码, 在需要时也可以获得完整的信息, 这时候就需要源码管理器啦!</p>
+<p>源码管理器会给每个位置分配一个全局唯一的整数 <code>Pos(u32)</code>, 通过源码管理器, 我们能以较小的开销获得一个 <code>Pos(u32)</code> 对应的文件名、行号、列号等信息. 类似地, <code>Span(u32..u32)</code> 是由一对 <code>Pos</code> 组成的区间, 你可以通过源码管理器获取这个区间对应的源码.</p>
+<p><img src="images/source-manager.jpg" /></p>
+<p>在 Konac 中, 源码管理器所需的一切信息, 都被保存在一个叫做 <code>SourceMap</code> 的结构体中. 如果把 <code>SourceMap</code> 比作一个巨大的, 横跨多个文件的字符串, 那 <code>Pos</code> 就是这个字符串的索引.</p>
+<pre><code>source_map.query_info(pos)
+// PosInfo {
+//     file_name: &quot;src/main.rs&quot;,
+//     line: 2,
+//     column: 15,
+//     ..
+// }
+
+source_map.query_line(pos)
+// 2
+
+source_map.query_column(pos)
+// 15
+
+source_map.query_source(start..end)
+// &quot;let x = 1 + \&quot;one\&quot;&quot;</code></pre>
+<h2 id="它在哪个文件里">它在哪个文件里</h2>
+</body>
+</html>
