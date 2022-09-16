@@ -23,13 +23,13 @@
 <p>Kona 是我目前正在实现的语言, 在计划中, 它是一个 ML 家族的方言, 语法和 Standard ML 相似, 但会额外支持行多态 (row polymorphism) 和多态变体 (polymorphic variant). 不过截止到当前, 我连词法解析器都还没开始写, 所以这里就不花篇幅介绍了, 你只需要知道 “Konac” 是一个编译器/解释器就好.</p>
 <h2 id="源码管理器">源码管理器</h2>
 <p>考虑一下, 如果我们想要输出像 Rustc 这样的诊断, 都需要什么样的位置信息?</p>
-<pre><code><strong style="color:red">error[E0277]</strong>: cannot add `&str` to `{integer}`
-<strong style="color:blue"> --&gt;</strong> src/main.rs:2:15
-<strong style="color:blue">  |</strong>
-<strong style="color:blue">2 |</strong>     let x = 1 + "one";
-<strong style="color:blue">  |</strong>               <strong style="color:red">^ no implementation for `{integer} + &str`</strong>
-<strong style="color:blue">  |</strong>
-<strong style="color:blue">  =</strong> help: the trait `Add<&str>` is not implemented for `{integer}`
+<pre style="color: white; background-color: rgb(56, 56, 56); padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(241, 76, 76)">error[E0277]</strong>: cannot add `&str` to `{integer}`
+<strong style="color:rgb(41, 184, 219)"> --&gt;</strong> src/main.rs:2:15
+<strong style="color:rgb(41, 184, 219)">  |</strong>
+<strong style="color:rgb(41, 184, 219)">2 |</strong>     let x = 1 + "one";
+<strong style="color:rgb(41, 184, 219)">  |</strong>               <strong style="color:rgb(241, 76, 76)">^ no implementation for `{integer} + &str`</strong>
+<strong style="color:rgb(41, 184, 219)">  |</strong>
+<strong style="color:rgb(41, 184, 219)">  =</strong> help: the trait `Add<&str>` is not implemented for `{integer}`
 </code></pre>
 <p>有几个显而易见的答案:</p>
 <ol type="1">
@@ -42,20 +42,20 @@
 <p><img src="images/source-manager.jpg" /></p>
 <p>在 Konac 中, 源码管理器所需的一切信息, 都被保存在一个叫做 <code>SourceMap</code> 的结构体中. 如果把 <code>SourceMap</code> 比作一个巨大的, 横跨多个文件的字符串, 那 <code>Pos</code> 就是这个字符串的索引.</p>
 <pre><code>source_map.query_info(pos)
-// PosInfo {
-//     file_name: &quot;src/main.rs&quot;,
-//     line: 2,
-//     column: 15,
-//     ..
-// }
+=&gt; PosInfo {
+       file_name: "src/main.rs",
+       line: 2,
+       column: 15,
+       ..
+   }
 
 source_map.query_line(pos)
-// 2
+=&gt; 2
 
 source_map.query_column(pos)
-// 15
+=&gt; 15
 
 source_map.query_source(start..end)
-// &quot;let x = 1 + \&quot;one\&quot;&quot;</code></pre>
+=&gt; &quot;let x = 1 + \&quot;one\&quot;&quot;</code></pre>
 </body>
 </html>
