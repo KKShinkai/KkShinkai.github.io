@@ -4,11 +4,11 @@ title: "Konac 杂记 (1): 源码管理器"
 
 # Konac 杂记 (1): 源码管理器
 
-Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方言, 语法与 Standard ML 类似, 但会额外支持行多态 (row polymorphism) 和多态变体 (polymorphic variant). 不过截止到目前, 我连词法解析器都还没开始写, 所以这里就不花篇幅介绍了, 你只需要知道 "Konac" 是一个编译器/解释器就好. 这篇文章讲的是它的源码信息管理器和诊断引擎的实现.
+Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方言, 语法与 Standard ML 类似, 但会额外支持行多态 (row polymorphism) 和多态变体 (polymorphic variant). 不过截止到目前, 我连词法解析器都还没开始写, 所以这里就不花篇幅介绍了, 你只需要知道 "Konac" 是一个编译器/解释器就好. 这篇文章讲的是它的源码管理器和诊断引擎的实现.
 
 ## 源码管理器
 
-考虑一下, 如果想要输出像 Rustc 这样的诊断, 我们都需要什么样的位置信息?
+考虑一下, 如果想要输出像 Rustc 这样的诊断, 我们都需要什么位置信息?
 
 <pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(241, 76, 76)">error[E0277]</strong>: cannot add `&str` to `{integer}`
 <strong style="color:rgb(41, 184, 219)"> --&gt;</strong> src/main.rs:2:15
@@ -23,11 +23,11 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
 
 1. 我们需要知道发生错误的源文件的名字 (`src/main.rs`);
 2. 我们需要知道错误发生在哪一行 (`2`) 哪一列 (`15`);
-3. 我们需要知道发生错误的那一行的全部源码 (<code>\"&nbsp;&nbsp;&nbsp;&nbsp;let x = 1 + \\"one\\";\"</code>);
+3. 我们需要知道发生错误的那一行的全部源码 (<code>\"&nbsp;&nbsp;&nbsp;&nbsp;let x = 1 + \\\"one\\\";\"</code>);
 
-在 Kona 的语法树中, 每个词元 (token) 乃至语法节点 (node), 都需要一对这样的位置信息来表示它们的起止位置. 如果直接存储全部的这些内容, 就会造成巨大的空间浪费. 我们需要一个缓存机制, 让我们能用更小巧的方式来定位源码, 在需要时也可以获得完整的信息, 这时候就需要源码管理器啦!
+在 Kona 的语法树中, 每个词元 (token) 乃至语法节点 (node), 都需要一对这样的位置信息来表示它们的起止位置. 直接存储全部的这些内容会造成巨大的空间浪费, 因此我们需要一个缓存机制, 让我们能用更小巧的方式来定位源码的同时, 也能提供完整的位置信息, 这就是源码管理器啦!
 
-源码管理器会给每个位置分配一个全局唯一的整数 `Pos(u32)`, 通过源码管理器, 我们能以较小的开销获得一个 `Pos(u32)` 对应的文件名、行号、列号等信息. 类似地, `Span(u32..u32)` 是由一对 `Pos` 组成的区间, 你可以通过源码管理器获取这个区间对应的源码.
+源码管理器会给每个位置分配一个全局唯一的整数 `Pos(u32)`, 源码管理器能以较小的开销查询到一个 `Pos(u32)` 对应的文件名、行号、列号等信息. 类似地, `Span(u32..u32)` 是由一对 `Pos` 组成的 (左闭右开) 区间, 你可以通过源码管理器获取这个区间对应的源码.
 
 <img src="images/source-manager.jpg" />
 
@@ -48,7 +48,7 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
     => 15
 
     source_map.query_source(start..end)
-    => "let x = 1 + \"one\""
+    => "    let x = 1 + \"one\""
 
 ## 在多个源文件中查询
 
@@ -71,18 +71,18 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
         ],
     }
 
-当我们拿到一个 `Pos(121)` 的时候, 我们很容易就可以知道, 这个源码在 `src/test1.kona` 文件中, 是第 21 个字符.
+当我们拿到 `Pos(121)` 时, 可以查询到, 这个源码在 `src/test1.kona` 文件中, 是第 21 个字符.
 
-这个搜索过程可以用二分查找来优化, 只要能保证 `source_files` 按照 `span` 的起始位置来排序即可. Rust 的标准库提供了一个非常好用的函数 [`binary_search_by_key`](https://doc.rust-lang.org/std/primitive.slice.html#method.binary_search_by_key), 你可以使用 `file.span.start` 作为键 (key), 来搜索包含 `pos` 的 `SourceFile`.
+上述的查询过程可以使用二分查找, 保证 `source_files` 按照 `span` 的起始位置来排序即可. Rust 的标准库提供了一个非常好用的函数 [`binary_search_by_key`](https://doc.rust-lang.org/std/primitive.slice.html#method.binary_search_by_key), 你可以使用 `file.span.start` 作为键 (key), 来搜索包含 `pos` 的 `SourceFile`.
 
 - 当 `pos` 恰好和 `source_files` 中某个文件的 `file.span.start` 相等时, `binary_search_by_key` 会返回 `Ok(index)`, 此时 `pos` 就是 `index` 索引的文件的第一个字符;
-- 当 `pos` 不和任何一个文件的 `file.span.start` 相等时, `binary_search_by_key` 会返回 `Err(index)`, 此时 `index` 是 `pos` 应该插入的位置, 这个位置的前一个, 就应该是包含 `pos` 的文件;
+- 当 `pos` 不和任何一个文件的 `file.span.start` 相等时, `binary_search_by_key` 会返回 `Err(index)`, 此时 `index` 是 `pos` 按顺序应该被插入的位置, 而这个位置的前边, 就是包含 `pos` 的文件;
 
-**整个源码管理器实现, 都是建立在二分查找这个非常简单的算法上的.**
+整个源码管理器实现, 都是建立在二分查找这个非常简单的算法上的.
 
 ## 行数查询
 
-按照这样的思路, 我们很容易就可以设计出查找一个 `Pos` 在第几行的设施. 在 `SourceFile` 中, 我们可以新增一个 `line_starts` 字段, 用来缓存每一行的起始位置, 这样我们就可以用二分查找来找到 `pos` 所在的行.
+按照这样的思路, 我们很容易就可以设计出查找一个 `Pos` 在第几行的设施. 在 `SourceFile` 中新增一个 `line_starts` 字段, 用来缓存每一行的起始位置. 查询的算法和文件查询完全相同.
 
     SourceFile {
         path: "src/main.kona",
@@ -93,11 +93,11 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
     source_file.query_line(Pos(34))
     => 4
 
-现在我们的 `SourceMap` 已经可以根据 `Pos` 找到指定的源文件和行数了. 实际上, 如果你的语言只计划支持 ASCII 字符, 这个 `SourceMap` 完全可以满足你的基本需求了. 但是, 如果 Unicode 字符也在你的计划在内, 痛苦就随之而来了.
+现在我们的 `SourceMap` 已经可以根据 `Pos` 找到指定的源文件和行数了. 实际上, 如果你的语言只支持 ASCII 字符, 这个 `SourceMap` 完全可以满足你的基本需求. 但是, 如果 Unicode 字符也在你的计划在内, 痛苦就随之而来了.
 
 ## 列数查询
 
-现在, 我们回顾一下文章最开始的 Rust 诊断信息, 但是把 `x` 换成 `λ`.
+现在, 我们回顾一下文章最开始的 Rust 诊断信息, 但把 `x` 换成 `λ`:
 
 <pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
 <strong style="color:rgb(41, 184, 219)">2 |</strong>     let λ = 1 + "one";
@@ -107,7 +107,7 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
 
 思考一下, 这个红色的下划线 <code><strong style="color:rgb(241, 76, 76)">^</strong></code> 是如何实现的?
 
-看起来, 我们只需要这个 `Pos` 所在的列数就可以实现这个效果了. 思路也没什么变化, 只需要先找到这个 `Pos` 所在的行, 找到这一行的起始位置, 然后用 `Pos` 减去这个起始位置, 就可以得到这个 `Pos` 在这一行的列数了.
+看起来, 我们只需要这个 `Pos` 所在的列数就能实现这个效果了. 思路也没什么新意, 只需要先找到这个 `Pos` 所在的行, 进而找到这一行的起始位置, 然后用 `Pos` 减去起始位置, 就可以得到这个 `Pos` 在这一行的列数了.
 
     source_file.query_column(pos)
     => 16
@@ -122,7 +122,7 @@ UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code p
 <strong style="color:rgb(41, 184, 219)">  |</strong>
 </code></pre>
 
-在这个例子中, `+` 的位置是 `Pos(28)`, 这一行的起始位置是 `Pos(13)`, 如果简单地做差, 可以计算出 `+` 在这一行的列数是 16 (由于列数是从 1 开始的, 这个值应该是 `28 - 13 + 1 = 16`). 但实际上, `+` 在第 15 列. `λ` (U+03BB) 在 UTF-8 编码中需要两个码元 `[206, 187]` 来表示, 在计算中, 它占了两个位置.
+在这个例子中, `+` 的位置是 `Pos(28)`, 而这一行的起始位置是 `Pos(13)`, 如果简单地做差, 可以计算出 `+` 在这一行的列数是 16 (由于列数是从 1 开始的, 这个值应该是 `28 - 13 + 1 = 16`). 但实际上, `+` 在第 15 列. `λ` (U+03BB) 在 UTF-8 编码中需要两个码元 `0xCE 0xBB` 来表示, 在计算中, 它错误地占了两个位置.
 
 为了避免多字节字符造成的影响, 我们需要在 `SourceFile` 中再增加一个新字段 `multi_byte_chars`, 用来缓存这个文件中所有多字节字符的起始位置和它们占用的字节数量. 为此还需要声明一个新类型:
 
@@ -134,22 +134,22 @@ UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code p
         len: u8,
     }
 
-在 `multi_byte_chars` 中, `MultiByteChar` 是根据 `pos` 排序的, 在已知某行起始位置的情况下, 只需要遍历这一行中, `pos` 小于指定位置的 `MultiByteChar`, 然后将它们的 `len` 加起来, 就可以得到计算列数中的误差值了. 减掉它, 我们终于可以得到正确的列数了.
+在 `multi_byte_chars` 中, `MultiByteChar` 会根据 `pos` 排序, 在已知某行起始位置的情况下, 只需要遍历这一行中, `pos` 小于指定位置的 `MultiByteChar`, 然后将它们的 `len` 加起来, 就可以得到计算列数中的误差值. 减掉它之后, 列数终于是正确的了.
 
     source_file.query_column(pos)
     => 15
 
 ## 显示列数查询
 
-截止到这里, 我们已经能够获取正确的列数了, 但这个列数只能用于文本编辑器中的错误提示, 而不能用在终端中. 我们修改一下我们的例子:
+截止到这里, 我们已经能够获取正确的列数了, 但这个列数只能用于文本编辑器中的错误提示, 而不能用在终端中. 修改一下之前的例子:
 
 <pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
-<strong style="color:rgb(41, 184, 219)">2 |</strong>     let 🌊 = 1 + "one";
+<strong style="color:rgb(41, 184, 219)">2 |</strong>     let <span style="font-size: 0.8em">⛵️</span> = 1 + "one";
 <strong style="color:rgb(41, 184, 219)">  |</strong>                <strong style="color:rgb(241, 76, 76)">^ no implementation for `{integer} + &str`</strong>
 <strong style="color:rgb(41, 184, 219)">  |</strong>
 </code></pre>
 
-加号 `+` 在第 15 列, 这是毫无疑问的, 但这个红色的下划线 <code><strong style="color:rgb(241, 76, 76)">^</strong></code> 其实在第 16 列, 因为 `🌊` 在显示上占了两个字符的位置. 除了常见的东亚字符和 emoji, Unicode 字符集中很多字符的显示宽度都是 2, 甚至有些字符的显示宽度是 0, 而 Tab 则需要 4 个位置. 为了解决这个问题, 位置信息不仅需要包含一个普通的列数 (`column`), 还需要包含一个显示列数 (`display_column`).
+加号 `+` 在第 15 列, 这是毫无疑问的, 但这个红色的下划线 <code><strong style="color:rgb(241, 76, 76)">^</strong></code> 其实在第 16 列, 因为 ⛵️ 在显示上占了两个英文字符的宽度. 除了常见的东亚字符和 emoji, Unicode 字符集中很多字符的显示宽度都是 2, 还有些字符的显示宽度是 0, 而 Tab 则需要 4 个空格的位置. 为了解决这个问题, 位置信息不仅需要提供一个普通的列数 (`column`), 还需要支持显示列数 (`display_column`).
 
 这一次, `SourceFile` 又需要增加新字段 `non_narrow_chars`, 用于保存那些显示宽度不为 1 的字符:
 
@@ -173,7 +173,7 @@ enum NonNarrowCharKind {
 
 在 Konac 中, `SourceMap` 中以字符串的形式存储在了整个编译单元中所有的源码, 这并不是什么好事, 但其实也无伤大雅啦. 如果你使用的是 C 或 C++ 这样的语言, 给 `SourceMap` 增加内存映射 (memory mapping) 支持也不是什么难事.
 
-在这种条件下, 我们可以开始着手解决最后的一点小问题了. 熟悉 Git 的人应该知道, Git 会为文件自动匹配适应大年操作系统的换行符. 在 Linux 下, 以 LF (即 `\n`) 换行的文件在同步到 Windows 上后, 如果未经特殊设置, 会自动转为以 CRLF (即 `\r\n`) 换行的文件, 这两种换行的字符数量并不相同. 于是就引出了一个问题, 同一份源码, 在不同操作系统下解析出来的语法树, 其位置信息会略有差别. 如果我们想要抹平这种差异, 就需要给 `SourceFile` 再添一个新字段 `normalized_pos` 了, 它是 `Vec<NormalizedPos>` 类型的:
+在这种条件下, 我们可以开始着手解决最后的一点小问题了. 熟悉 Git 的人应该知道, Git 会为文件自动匹配适应于当前操作系统的换行符. 在 Linux 下, 以 LF (即 `\n`) 换行的文件在同步到 Windows 上后, 如果未经特殊设置, 会自动转为以 CRLF (即 `\r\n`) 换行的文件, 这两种换行的字符数量并不相同. 于是就引出了一个问题, 同一份源码, 在不同操作系统下解析出来的语法树, 其位置信息会略有差别. 如果我们想要抹平这种差异, 就需要给 `SourceFile` 再添一个新字段 `normalized_pos` 了:
 
     struct NormalizedPos {
         pos: Pos
@@ -189,7 +189,7 @@ enum NonNarrowCharKind {
 
 ## 终了
 
-终于, 我们可以用 `SourceMap` 正确, 高效地查询位置信息了!
+终于, 我们可以用 `SourceMap` 正确、高效地查询位置和源码信息了!
 
     source_map.query_info(pos)
     => PosInfo {
@@ -198,3 +198,9 @@ enum NonNarrowCharKind {
            column: 15,
            display_column: 16,
        }
+
+    source_map.query_line_source(pos)
+    => "    let ⛵️ = 1 + \"one\""
+
+    source_map.query_source(pos..pos + 1)
+    => "+"
