@@ -16,7 +16,7 @@
 <link rel="manifest" href="../site.webmanifest">
 <link rel="stylesheet" href="../static/css/normalize-v8.0.1.css">
 <link rel="stylesheet" href="../static/css/katex-font.css">
-<link rel="stylesheet" href="../static/css/kkshinkai-v10.0.1.css">
+<link rel="stylesheet" href="../static/css/kkshinkai-v10.0.2.css">
 </head>
 <body>
 <h1 id="unicode-字符集与字符编码">Unicode 字符集与字符编码</h1>
@@ -28,7 +28,7 @@
 <p>ASCII 字符集是一种简单字符集, 而 Unicode 字符集则非常的复杂, <a href="https://unicode.org/standard/standard.html">Unicode 规范</a> 并不仅仅是一张扩充的 ASCII 表那么简单. 分配字符只是 Unicode 规范的一小部分, 该规范还包括大量的和文字处理相关的描述, 比如如何划分词语和断行, 处理不同地区的文字元素, 显示从右向左书写的文字等等, 它是一种现代字符集.</p>
 <p>现代字符编码模型 (character encode model) 将字符字符编码的概念分为 : 有哪些字符, 它们的编号, 这些编号如何编码成一系列的码元 (有限大小的数字) 以及最后这些单元如何组成字节流若干问题. Unicode 字符编码模型被划为五个层次 :</p>
 <ol type="1">
-<li><strong>抽象字符表</strong> (abstract character repertoire) 是一个系统支持的所有抽象字符的集合, 反映了将书写系统分解成线性信息单元的过程, 决定一些复杂的语言如天城文 (देवनागरी), 阿拉伯文 (<code>اَلْعَرَبِيَّةُ‎</code>), 卡纳达文 (ಕನ್ನಡ) 该如何从复杂的图案分解成简单的线性数据.</li>
+<li><strong>抽象字符表</strong> (abstract character repertoire) 是一个系统支持的所有抽象字符的集合, 反映了将书写系统分解成线性信息单元的过程, 决定一些复杂的语言如天城文 (देवनागरी), 阿拉伯文 (<code>اَلْعَرَبِيَّةُ</code>), 卡纳达文 (ಕನ್ನಡ) 该如何从复杂的图案分解成简单的线性数据.</li>
 <li><strong>编码字符集</strong> (coded character set, CCS) 将字符集中的每一个字符表示为一个非负整数, 即一个抽象的<strong>码点</strong> (code point).</li>
 <li><strong>字符编码表</strong> (character encoding form, CEF) 将编码字符集的非负整数值转换成有限比特长度的整型值 (码元) 序列.</li>
 <li><strong>字符编码方案</strong> (character encoding scheme, CES) 將定长的整型值（即码元）映射到 8-bit 字节序列, 以便编码后的数据的文件存储或网络传输, 字节序也在此时指定.</li>

@@ -10,10 +10,10 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
 
 考虑一下, 如果想要输出像 Rustc 这样的诊断, 我们都需要什么样的位置信息?
 
-<pre style="color: white; background-color: rgb(56, 56, 56); padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(241, 76, 76)">error[E0277]</strong>: cannot add `&str` to `{integer}`
+<pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(241, 76, 76)">error[E0277]</strong>: cannot add `&str` to `{integer}`
 <strong style="color:rgb(41, 184, 219)"> --&gt;</strong> src/main.rs:2:15
 <strong style="color:rgb(41, 184, 219)">  |</strong>
-<strong style="color:rgb(41, 184, 219)">2 |</strong>     let λx = 1 + "one";
+<strong style="color:rgb(41, 184, 219)">2 |</strong>     let x = 1 + "one";
 <strong style="color:rgb(41, 184, 219)">  |</strong>               <strong style="color:rgb(241, 76, 76)">^ no implementation for `{integer} + &str`</strong>
 <strong style="color:rgb(41, 184, 219)">  |</strong>
 <strong style="color:rgb(41, 184, 219)">  =</strong> help: the trait `Add<&str>` is not implemented for `{integer}`
@@ -23,7 +23,7 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
 
 1. 我们需要知道发生错误的源文件的名字 (`src/main.rs`);
 2. 我们需要知道错误发生在哪一行 (`2`) 哪一列 (`15`);
-3. 我们需要知道发生错误的那一行的全部源码 (`let λ = 1 + "one";`);
+3. 我们需要知道发生错误的那一行的全部源码 (<code>\"&nbsp;&nbsp;&nbsp;&nbsp;let x = 1 + \\"one\\";\"</code>);
 
 在 Kona 的语法树中, 每个词元 (token) 乃至语法节点 (node), 都需要一对这样的位置信息来表示它们的起止位置. 如果直接存储全部的这些内容, 就会造成巨大的空间浪费. 我们需要一个缓存机制, 让我们能用更小巧的方式来定位源码, 在需要时也可以获得完整的信息, 这时候就需要源码管理器啦!
 
@@ -50,7 +50,7 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
     source_map.query_source(start..end)
     => "let x = 1 + \"one\""
 
-## 在多个源文件中查找
+## 在多个源文件中查询
 
 `SourceMap` 可能会读入多个源文件, 由于我们希望 `Pos` 是全局唯一的, 所以每个源文件都需要被分配一段独立的, 互不相交的区间, 这个区间的长度应该恰好等于这个文件的长度. 假设我们有三个源文件, 长度分别为 100, 200, 300, 那么读取后, `SourceMap` 应该大致是这样的:
 
@@ -80,7 +80,7 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
 
 **整个源码管理器实现, 都是建立在二分查找这个非常简单的算法上的.**
 
-## 查找行数
+## 行数查询
 
 按照这样的思路, 我们很容易就可以设计出查找一个 `Pos` 在第几行的设施. 在 `SourceFile` 中, 我们可以新增一个 `line_starts` 字段, 用来缓存每一行的起始位置, 这样我们就可以用二分查找来找到 `pos` 所在的行.
 
@@ -95,11 +95,11 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
 
 现在我们的 `SourceMap` 已经可以根据 `Pos` 找到指定的源文件和行数了. 实际上, 如果你的语言只计划支持 ASCII 字符, 这个 `SourceMap` 完全可以满足你的基本需求了. 但是, 如果 Unicode 字符也在你的计划在内, 痛苦就随之而来了.
 
-## 查找列数
+## 列数查询
 
-现在, 我们回顾一下文章最开始的 Rust 诊断信息:
+现在, 我们回顾一下文章最开始的 Rust 诊断信息, 但是把 `x` 换成 `λ`.
 
-<pre style="color: white; background-color: rgb(56, 56, 56); padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
+<pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
 <strong style="color:rgb(41, 184, 219)">2 |</strong>     let λ = 1 + "one";
 <strong style="color:rgb(41, 184, 219)">  |</strong>               <strong style="color:rgb(241, 76, 76)">^ no implementation for `{integer} + &str`</strong>
 <strong style="color:rgb(41, 184, 219)">  |</strong>
@@ -107,7 +107,7 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
 
 思考一下, 这个红色的下划线 <code><strong style="color:rgb(241, 76, 76)">^</strong></code> 是如何实现的?
 
-实际上, 我们只需要这个 `Pos` 所在的列数就可以实现这个效果了. 思路也没什么变化, 只需要先找到这个 `Pos` 所在的行, 找到这一行的起始位置, 然后用 `Pos` 减去这个起始位置, 就可以得到这个 `Pos` 在这一行的列数了.
+看起来, 我们只需要这个 `Pos` 所在的列数就可以实现这个效果了. 思路也没什么变化, 只需要先找到这个 `Pos` 所在的行, 找到这一行的起始位置, 然后用 `Pos` 减去这个起始位置, 就可以得到这个 `Pos` 在这一行的列数了.
 
     source_file.query_column(pos)
     => 16
@@ -116,7 +116,7 @@ Kona 是我最近正在实现的语言, 在计划中它是一个 ML 家族的方
 
 UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code point) 可能需要由多个连续的码元 (code unit) 来表示. 当你读取一个字符串的第 $n$ 项时, 你读到的不一定是第 $n$ 个字符, 这取决于它前边是否有多字节字符.
 
-<pre style="color: white; background-color: rgb(56, 56, 56); padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
+<pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
 <strong style="color:rgb(41, 184, 219)">2 |</strong>     let λ = 1 + "one";
 <strong style="color:rgb(41, 184, 219)">  |</strong>               <strong style="color:rgb(241, 76, 76)">^ no implementation for `{integer} + &str`</strong>
 <strong style="color:rgb(41, 184, 219)">  |</strong>
@@ -139,11 +139,11 @@ UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code p
     source_file.query_column(pos)
     => 15
 
-## 它究竟在第几列?
+## 显示列数查询
 
 截止到这里, 我们已经能够获取正确的列数了, 但这个列数只能用于文本编辑器中的错误提示, 而不能用在终端中. 我们修改一下我们的例子:
 
-<pre style="color: white; background-color: rgb(56, 56, 56); padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
+<pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
 <strong style="color:rgb(41, 184, 219)">2 |</strong>     let 🌊 = 1 + "one";
 <strong style="color:rgb(41, 184, 219)">  |</strong>                <strong style="color:rgb(241, 76, 76)">^ no implementation for `{integer} + &str`</strong>
 <strong style="color:rgb(41, 184, 219)">  |</strong>
@@ -166,13 +166,30 @@ enum NonNarrowCharKind {
 }
 ```
 
-字符的显示宽度可以通过 Unicode Standard Annex #11 [East Asian Width](https://www.unicode.org/reports/tr11/) 来获取, 在 Rust 里, 你可以安装
+字符的显示宽度可以通过 Unicode Standard Annex #11 [East Asian Width](https://www.unicode.org/reports/tr11/) 来获取, 在 Rust 里, 你可以使用
 [unicode-width](https://crates.io/crates/unicode-width) 这个包.
+
+## 源码常规化
+
+在 Konac 中, `SourceMap` 中以字符串的形式存储在了整个编译单元中所有的源码, 这并不是什么好事, 但其实也无伤大雅啦. 如果你使用的是 C 或 C++ 这样的语言, 给 `SourceMap` 增加内存映射 (memory mapping) 支持也不是什么难事.
+
+在这种条件下, 我们可以开始着手解决最后的一点小问题了. 熟悉 Git 的人应该知道, Git 会为文件自动匹配适应大年操作系统的换行符. 在 Linux 下, 以 LF (即 `\n`) 换行的文件在同步到 Windows 上后, 如果未经特殊设置, 会自动转为以 CRLF (即 `\r\n`) 换行的文件, 这两种换行的字符数量并不相同. 于是就引出了一个问题, 同一份源码, 在不同操作系统下解析出来的语法树, 其位置信息会略有差别. 如果我们想要抹平这种差异, 就需要给 `SourceFile` 再添一个新字段 `normalized_pos` 了, 它是 `Vec<NormalizedPos>` 类型的:
+
+    struct NormalizedPos {
+        pos: Pos
+        diff: u32
+    }
+
+之前的操作中, 我们都只是在解析并缓存源码的相关信息, 没有对源码本身做改动. 而这一次, 我们会对源码进行一些修改, 这也是为什么我在上文要强调 `SourceMap` 拥有以字符串形式存储的所有源码.
+
+- UTF-8 BOM (即 `0xEF 0xBB 0xBF`) 会被删除, 每次删除会导致差异 `diff` 增加 3;
+- 源码中的 `\r\n` 会被转换为 `\n`, 每次转换会导致差异 `diff` 增加 1;
+
+当 `normalized_pos` 尾部添加新 `NormalizedPos` 时, 它的 `diff` 值会根据当前 `normalized_pos` 末尾的 `diff` 值进行迭加. 如果我们需要获取某个 `Pos` 在源文件中最原始的位置, 只需要找到这个位置的上一个偏移点, 并使用这个 `diff` 值加以修正就好了.
 
 ## 终了
 
-终于, 我们的 `SourceMap` 可以返回一组完成的位置信息了!
-
+终于, 我们可以用 `SourceMap` 正确, 高效地查询位置信息了!
 
     source_map.query_info(pos)
     => PosInfo {
