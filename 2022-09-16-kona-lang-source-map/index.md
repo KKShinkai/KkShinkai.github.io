@@ -116,7 +116,17 @@ Konac 的源码管理器是 Rustc 源码管理器的一个修改版本, 如果�
 
 但是, 非常不幸, 这个结果是错的.
 
-UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code point) 可能需要由多个连续的码元 (code unit) 来表示. 当你读取一个字符串的第 $n$ 个字节时, 你读到的不一定是第 $n$ 个字符, 这取决于它前边是否有多字节字符.
+为了保留对源码随机访问 (random access) 的能力, `Pos(u32)` 中的无符号数实际上是带偏移量的字节索引. 例如, 对于如下的文件:
+
+    SourceFile {
+        src: "fn main() {\n    let λ = 1 + \"one\";\n}\n",
+        span: start_pos..end_pos,
+        ..
+    }
+
+某个 `pos` 位置处的字节是 `src[pos - start_pos]`.
+
+而由于 UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code point) 可能需要由多个连续的字节来表示. 当你读取一个字符串的第 $n$ 个字节时, 你读到的不一定是第 $n$ 个字符, 这取决于它前边是否有多字节字符.
 
 <pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
 <strong style="color:rgb(41, 184, 219)">2 |</strong>     let λ = 1 + "one";
@@ -124,9 +134,14 @@ UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code p
 <strong style="color:rgb(41, 184, 219)">  |</strong>
 </code></pre>
 
-在这个例子中, `+` 的位置是 `Pos(28)`, 而这一行的起始位置是 `Pos(13)`, 如果简单地做差, 可以计算出 `+` 在这一行的列数是 16 (由于列数是从 1 开始的, 这个值应该是 `28 - 13 + 1 = 16`). 但实际上, `+` 在第 15 列. `λ` (U+03BB) 在 UTF-8 编码中需要用两个码元 `0xCE 0xBB` 来表示, 在计算时, 它错误地占了两个位置.
+在这个例子中, `+` 的位置是 `Pos(28)`, 而这一行的起始位置是 `Pos(13)`, 如果简单地做差, 可以计算出 `+` 在这一行的列数是 16 (由于列数是从 1 开始的, 这个值应该是 `28 - 13 + 1 = 16`). 但实际上, `+` 在第 15 列. `λ` (U+03BB) 在 UTF-8 编码中需要用两个码元 `0xCE 0xBB` 来表示, 在计算中, 它错误地占了两个位置.
 
-为了避免多字节字符造成的影响, 我们需要在 `SourceFile` 中再增加一个新字段 `multi_byte_chars`, 用来缓存这个文件中所有多字节字符的起始位置和它们占用的字节数量. 为此还需要声明一个新类型:
+为了避免多字节字符造成的影响, 我们需要在 `SourceFile` 中再增加一个新字段 `multi_byte_chars`, 用来缓存这个文件中所有多字节字符的起始位置和它们占用的字节数量.
+
+    struct SourceFile {
+        multi_byte_chars: Vec<MultiByteChar>,
+        ..
+    }
 
     struct MultiByteChar {
         pos: Pos,
@@ -155,6 +170,11 @@ UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code p
 
 这一次, `SourceFile` 又需要增加新字段 `non_narrow_chars`, 用于保存那些显示宽度不为 1 的字符:
 
+    struct SourceFile {
+        non_narrow_chars: Vec<NonNarrowChar>,
+        ..
+    }
+
     struct NonNarrowChar {
         pos: Pos,
         kind: NonNarrowCharKind,
@@ -175,6 +195,11 @@ UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code p
 
 在这种条件下, 我们可以开始着手解决最后的一点小问题了. 熟悉 Git 的人应该知道, Git 会为文件自动匹配适应于当前操作系统的换行符. 在 Linux 下, 以 LF (即 `\n`) 换行的文件在同步到 Windows 上后, 如果未经特殊设置, 会自动转为以 CRLF (即 `\r\n`) 换行的文件, 这两种换行的字符数量并不相同. 于是就引出了一个问题, 同一份源码, 在不同操作系统下解析出来的语法树, 其位置信息会略有差别. 如果我们想要抹平这种差异, 就需要给 `SourceFile` 再添一个新字段 `normalized_pos` 了:
 
+    struct SourceFile {
+        normalized_pos: Vec<NormalizedPos>,
+        ..
+    }
+
     struct NormalizedPos {
         pos: Pos
         diff: u32
@@ -189,7 +214,22 @@ UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code p
 
 ## 终了
 
-终于, 我们可以用 `SourceMap` 正确、高效地查询位置和源码信息了!
+经过上边的重重工序, 我们的 `SourceFile` 已经变得很复杂了:
+
+    struct SourceFile {
+        name: SourcePath,
+        src: String,
+        span: Span,
+        line_starts: Vec<Pos>,
+        multi_byte_chars: Vec<MultiByteChar>,
+        non_narrow_chars: Vec<NonNarrowChar>,
+        normalized_pos: Vec<NormalizedPos>,
+        ..
+    }
+
+在第一次读入源字符串时, 我们需要解析并缓存所有的这些内容, 虽然没有什么难度, 但实现起还是有点恼人的.
+
+不论如何, 终于, 我们可以用 `SourceMap` 正确、高效地查询源码的位置信息了!
 
     source_map.query_info(pos)
     => PosInfo {
