@@ -5,7 +5,7 @@
 <title>KS. Journal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="twitter:card" content="summary"></meta>
-<meta property="og:title" content="Unicode 字符集与字符编码" />
+<meta property="og:title" content="Kk Shinkai's Blog" />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="zh_CN" />
 <meta property="og:image" content="https://kkshinkai.moe/cover.jpeg" />
@@ -19,6 +19,9 @@
 <link rel="stylesheet" href="../static/css/kkshinkai-v10.0.2.css">
 </head>
 <body>
+<header id="blog-header">
+<a href="../index.html">&lsaquo; 回到主页</a> &nbsp;|&nbsp; <a href="./index.md">查看 Markdown 源码</a> &nbsp;|&nbsp; <a href="mailto:kkshinkai@kkshinkai.moe">邮件勘误</a>
+</header>
 <h1 id="unicode-字符集与字符编码">Unicode 字符集与字符编码</h1>
 <h2 id="字符集的历史">字符集的历史</h2>
 <p>计算机只能处理二进制数字, 如果要处理文本, 就必须建立字符和二进制字节序列之间的关系. ASCII (American Standard Code for Information Interchange) 编码是基于拉丁字母的一套编码系统, 也是最简单的<strong>字符集</strong> (character set), 它建立了字符和代码单元 (0 ~ 127 的整数) 之间的映射关系表. 例如 <code>0110 0001</code> (97) 对应 <code>'a'</code>, <code>0010 0100</code> (36) 对应 <code>'$'</code>, <code>0010 1000</code> (40) 对应 <code>'('</code> 等等.</p>
@@ -68,21 +71,21 @@
 <p>接着我们接触一个附加概念, 一个在编码字抽象层次之上的概念: 字素簇. <strong>字素簇</strong> (grapheme cluster) 指人直觉和认知上所认为是单个字符的文本元素. 一个字位簇可能就是一个抽象字, 也可能由多个抽象字组成. 字素簇应当是文本操作的基本单位, 高级文本元素在分割时, 通常不会从一个字素簇中间拆分. 比如一个排版程序在自动换行时将 <code>'Å'</code> 的 <code>'A'</code> 和 <code>'◌̊'</code> 拆到了两行中, 这显然是不可容忍的行为. 再比如反转字符串 <code>'ÅB'</code> (<code>"\u0041\u030A\u0042"</code>) 的时候, <code>"\u0041\u030A"</code> (<code>'Å'</code>) 应整体和 <code>'B'</code> 交换位置, 得到 <code>'BÅ'</code> (<code>"\u0042\u0041\u030A"</code>), 而不该是简单的反转码位的排列, 得到 <code>'B̊A'</code> (<code>"\u0041\u030A\u0042"</code>).</p>
 <p>组合字是字素簇的重要组成成分, 但字素簇并非只用于确保组合字的完整性, 其划分和具体的语言的种类, 算法的选择都一定关系, 斯洛伐克 (Slovak) 语中的 <code>"ch"</code> 或赛萨拉 (Sisaala) 语中的 <code>"ky"</code> 都被视为一个独立的字素簇, 尽管它们确实由两个分离的字母组成.</p>
 <p>Swift 的 <code>String</code> 类型默认以字位簇作为文本处理的基本单位.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode swift"><code class="sourceCode swift"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> <span class="va">str</span> <span class="op">=</span> <span class="st">&quot;</span><span class="er">\u</span><span class="st">{0041}</span><span class="er">\u</span><span class="st">{030A}</span><span class="er">\u</span><span class="st">{0042}&quot;</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>str                    <span class="co">// &quot;ÅB&quot;</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>String<span class="op">(</span>str<span class="op">.</span>reversed<span class="op">())</span> <span class="co">// &quot;BÅ&quot;</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>Array<span class="op">(</span>str<span class="op">)</span> <span class="co">// [&quot;Å&quot;, &quot;B&quot;]</span></span></code></pre></div>
+<pre class="swift"><code>let str = &quot;\u{0041}\u{030A}\u{0042}&quot;
+
+str                    // &quot;ÅB&quot;
+String(str.reversed()) // &quot;BÅ&quot;
+
+Array(str) // [&quot;Å&quot;, &quot;B&quot;]</code></pre>
 <p>Java 如果直接使用 <code>StringBuilder</code> 的 <code>reverse()</code> 方法翻转字符串, 得到的结果是错的.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">var</span> str <span class="op">=</span> <span class="st">&quot;</span><span class="sc">\u0041\u030A\u0042</span><span class="st">&quot;</span><span class="op">;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>str<span class="op">;</span>                              <span class="co">// &quot;ÅB&quot;</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">new</span> <span class="bu">StringBuilder</span><span class="op">(</span>str<span class="op">).</span><span class="fu">reverse</span><span class="op">();</span> <span class="co">// &quot;B̊A&quot;</span></span></code></pre></div>
+<pre class="java"><code>var str = &quot;\u0041\u030A\u0042&quot;;
+
+str;                              // &quot;ÅB&quot;
+new StringBuilder(str).reverse(); // &quot;B̊A&quot;</code></pre>
 <p>使用正则表达式可以缓解这个问题, 在正则表达式语法中, <code>\X</code> 用于表达字素簇, 而 <code>\b{g}</code> 用于表达字素簇的边界, 使用 <code>.split("\\b{g}")</code> 方法就能够正确的按照字素簇将字符串分割为字素簇数组了.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">var</span> str <span class="op">=</span> <span class="st">&quot;</span><span class="sc">\u0041\u030A\u0042</span><span class="st">&quot;</span><span class="op">;</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dt">var</span> cluster <span class="op">=</span> str<span class="op">.</span><span class="fu">split</span><span class="op">(</span><span class="st">&quot;</span><span class="sc">\\</span><span class="st">b{g}&quot;</span><span class="op">);</span> <span class="co">// String[2] { &quot;Å&quot;, &quot;B&quot; }</span></span></code></pre></div>
+<pre class="java"><code>var str = &quot;\u0041\u030A\u0042&quot;;
+
+var cluster = str.split(&quot;\\b{g}&quot;); // String[2] { &quot;Å&quot;, &quot;B&quot; }</code></pre>
 <h2 id="编码形式">编码形式</h2>
 <p>接下里, 我们开始讨论码点的存储形式, 即 Unicode 代码单元和有限长度的码元序列之间的映射关系.</p>
 <p>Unicode 规范包含三种不同的<strong>编码形式</strong> (encode form): UTF-8, UTF-16 和 UTF-32 (UTF, Unicode/UCS transformation format), 分别使用 8-bit, 16-bit 和 32-bit 的<strong>码元</strong> (code unit) 序列来存储码点 (code point) 信息. 这三种编码形式都能够表示 Unicode 规范中的所有编码字, 它们之间可以无损转换, 不会造成数据丢失.</p>
@@ -110,11 +113,11 @@
 </ol>
 <p>前导代理, 后尾代理, 和 BMP 中有效字符的码位互不重叠, 因此搜索程序的实现是简单的. 一个字符编码的一部分不可能与另一个字符编码的不同部分相重叠, 我们称之为<strong>自同步的</strong> (self-synchronizing), 可以通过仅检查一个码元来判定给定字符的下一个字符的起始码元.</p>
 <p>Java 中的字符串是 UTF-16 编码的, 这和 Java 早期选择的 UCS-2 编码有关, UCS-2 是一个定长编码, 当后来 UCS-2 无法表示 Unicode 字符时, 过渡到了兼容它的 UTF-16 成为了 Java 最自然的选择. 不过, 这同时也造成了 Java <code>String</code> 类的部分方法无法正确的处理变长编码. 在 Java 中, <code>char</code> (及对应包装类 <code>Character</code>) 类是一个 UTF-16 码元, 随机访问字符串所得到的自然也是码元, 是无意义的. 正确遍历 Java 字符串的方法是 :</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> str<span class="op">.</span><span class="fu">length</span><span class="op">();)</span> <span class="op">{</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> c <span class="op">=</span> str<span class="op">.</span><span class="fu">codePointAt</span><span class="op">(</span>i<span class="op">);</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">System</span><span class="op">.</span><span class="fu">out</span><span class="op">.</span><span class="fu">println</span><span class="op">(</span>c<span class="op">);</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    i <span class="op">+=</span> <span class="bu">Character</span><span class="op">.</span><span class="fu">charCount</span><span class="op">(</span>c<span class="op">);</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<pre class="java"><code>for (int i = 0; i &lt; str.length();) {
+    int c = str.codePointAt(i);
+    System.out.println(c);
+    i += Character.charCount(c);
+}</code></pre>
 <p>显然, Java 字符串的 <code>.length()</code> 方法返回的结果也不是码元数量, 而是码点数量. 很多较老的语言都有类似的问题, 它们无法很好的处理 BMP 平面以外的字符.</p>
 <h2 id="utf-8">UTF-8</h2>
 <p>UTF-8 和 UTF-16 一样, 也是一种不定长编码形式, 它的码元更短, 为 8-bit, 使用 1 ~ 4 个码元来表示一个码点.</p>
@@ -167,15 +170,15 @@
 </table>
 <p>ASCII 是 UTF-8 的一个子集, ASCII 字符串也同时是 UTF-8 字符串, 不需要转换.</p>
 <p>Rust 的字符串 <code>String</code> (<code>str</code>) 就是 UTF-8 编码的, 其内部是一个 8-bit 无符号整数数组 <code>Vec&lt;u8&gt;</code>, 并且提供了两种迭代器: <code>.chars()</code> 逐码点迭代, <code>.bytes()</code> 逐码元迭代. Rust 在不借助 Unicode 库的情况下暂时还无法处理字素簇.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;🌊&quot;</span><span class="op">.</span>chars()<span class="op">.</span><span class="pp">collect::</span><span class="op">&lt;</span><span class="dt">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;&gt;</span>() <span class="co">// [&#39;🌊&#39;]</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;🌊&quot;</span><span class="op">.</span>bytes()<span class="op">.</span><span class="pp">collect::</span><span class="op">&lt;</span><span class="dt">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;&gt;</span>() <span class="co">// [240, 159, 140, 138]</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;é&quot;</span><span class="op">.</span>chars()<span class="op">.</span><span class="pp">collect::</span><span class="op">&lt;</span><span class="dt">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;&gt;</span>()   <span class="co">// [&#39;e&#39;, &#39;\u{301}&#39;]</span></span></code></pre></div>
+<pre class="rust"><code>&quot;🌊&quot;.chars().collect::&lt;Vec&lt;_&gt;&gt;() // [&#39;🌊&#39;]
+&quot;🌊&quot;.bytes().collect::&lt;Vec&lt;_&gt;&gt;() // [240, 159, 140, 138]
+&quot;é&quot;.chars().collect::&lt;Vec&lt;_&gt;&gt;()   // [&#39;e&#39;, &#39;\u{301}&#39;]</code></pre>
 <p>Rust 标准库提供了一系列的字符串类型, 其中 <code>OsString</code> (<code>OsStr</code>) 是平台相关的, 也是 <code>Path</code> (<code>PathBuf</code>) 的内部实现. Windows API 中的字符串是 UTF-16 的, 并且部分未能正确的验证合法性, 当需要大量使用 Windows API 时, 应考虑该类型.</p>
 <p>MySQL 字符编码集中有两套 UTF-8 编码实现: <code>utf8</code> 和 <code>utf8mb4</code>, 其中 <code>utf8</code> 一个码点最多占据 3 字节空间, 是一个过时的实现. 在 5.5 版本中, MySQL 推出了 <code>utf8mb4</code>, 并调整 <code>utf8</code> 为 <code>utf8mb3</code> 的别名, 以修正此遗留问题.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">create</span> <span class="kw">table</span> utf8mb4_table (</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">int</span> auto_increment <span class="kw">primary</span> <span class="kw">key</span>,</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    content <span class="dt">varchar</span>(<span class="dv">255</span>)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>)  <span class="kw">default</span> charset utf8mb4;</span></code></pre></div>
+<pre class="sql"><code>create table utf8mb4_table (
+    id int auto_increment primary key,
+    content varchar(255)
+)  default charset utf8mb4;</code></pre>
 <h2 id="参考资料">参考资料</h2>
 <ul>
 <li><a href="https://unicode.org/versions/Unicode13.0.0/">Unicode 13.0.0 Core Specification</a></li>

@@ -5,7 +5,7 @@
 <title>KS. Journal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="twitter:card" content="summary"></meta>
-<meta property="og:title" content="Konac 杂记 (1): 源码管理器" />
+<meta property="og:title" content="Kk Shinkai's Blog" />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="zh_CN" />
 <meta property="og:image" content="https://kkshinkai.moe/cover.jpeg" />
@@ -19,8 +19,11 @@
 <link rel="stylesheet" href="../static/css/kkshinkai-v10.0.2.css">
 </head>
 <body>
-<h1 id="konac-杂记-1-源码管理器">Konac 杂记 (1): 源码管理器</h1>
-<p>Kona 是我最近正在实现的语言, 在计划中它是一门 ML 家族的方言, 语法和 Standard ML 类似, 但会额外支持行多态 (row polymorphism) 和多态变体 (polymorphic variant). 不过截止到目前, 我连词法解析器都还没开始写, 所以这里就不花篇幅介绍了, 你只需要知道 “Konac” 是一个编译器/解释器就好. 这篇文章讲的是它的源码管理器和诊断引擎的实现.</p>
+<header id="blog-header">
+<a href="../index.html">&lsaquo; 回到主页</a> &nbsp;|&nbsp; <a href="./index.md">查看 Markdown 源码</a> &nbsp;|&nbsp; <a href="mailto:kkshinkai@kkshinkai.moe">邮件勘误</a>
+</header>
+<h1 id="kona-杂记一-源码管理器">Kona 杂记一: 源码管理器</h1>
+<p>Kona 是我最近正在实现的语言, 在计划中它是一门 ML 家族的方言, 语法和 Standard ML 类似. 不过截止到目前, 我连很多基础的设定都没有想好, 所以这里就不花篇幅介绍了, 你只需要知道 “Konac” 是一个编译器/解释器就好. 这篇文章讲的是它的源码管理器和诊断引擎的实现.</p>
 <p>Konac 的源码管理器是 Rustc 源码管理器的一个修改版本, 如果你了解 Rustc 的实现 (或对 Rustc 感兴趣), 也可以参照 <a href="https://doc.rust-lang.org/beta/nightly-rustc/rustc_span/index.html">rustc_span</a> 模块的源码来阅读本文.</p>
 <h2 id="源码管理器">源码管理器</h2>
 <p>考虑一下, 如果想要输出像 Rustc 这样的漂亮的诊断信息, 我们都需要知道什么?</p>

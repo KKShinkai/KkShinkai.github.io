@@ -1,10 +1,10 @@
 ---
-title: "Konac 杂记 (1): 源码管理器"
+title: "Kona 杂记一: 源码管理器"
 ---
 
-# Konac 杂记 (1): 源码管理器
+# Kona 杂记一: 源码管理器
 
-Kona 是我最近正在实现的语言, 在计划中它是一门 ML 家族的方言, 语法和 Standard ML 类似, 但会额外支持行多态 (row polymorphism) 和多态变体 (polymorphic variant). 不过截止到目前, 我连词法解析器都还没开始写, 所以这里就不花篇幅介绍了, 你只需要知道 "Konac" 是一个编译器/解释器就好. 这篇文章讲的是它的源码管理器和诊断引擎的实现.
+Kona 是我最近正在实现的语言, 在计划中它是一门 ML 家族的方言, 语法和 Standard ML 类似. 不过截止到目前, 我连很多基础的设定都没有想好, 所以这里就不花篇幅介绍了, 你只需要知道 "Konac" 是一个编译器/解释器就好. 这篇文章讲的是它的源码管理器和诊断引擎的实现.
 
 Konac 的源码管理器是 Rustc 源码管理器的一个修改版本, 如果你了解 Rustc 的实现 (或对 Rustc 感兴趣), 也可以参照 [rustc\_span](https://doc.rust-lang.org/beta/nightly-rustc/rustc_span/index.html) 模块的源码来阅读本文.
 
