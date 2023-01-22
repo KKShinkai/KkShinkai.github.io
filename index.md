@@ -1,4 +1,4 @@
-# Kk Shinkai's Journal
+# Kk Shinkai 的部落格
 
 -   2022.09.16 / [Kona 杂记一: 源码管理器](./2022-09-16-kona-lang-source-map/index.html)
 -   2021.03.01 / [解构赋值的陷阱](./2021-03-01-pitfalls-of-destruct/index.html)
