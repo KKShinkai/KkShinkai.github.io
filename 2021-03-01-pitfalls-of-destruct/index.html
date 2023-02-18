@@ -15,7 +15,7 @@
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
 <link rel="manifest" href="../site.webmanifest">
 <link rel="stylesheet" href="../static/css/normalize-v8.0.1.css">
-<link rel="stylesheet" href="../static/css/kkshinkai-v10.0.2.css">
+<link rel="stylesheet" href="../static/css/kkshinkai-v11.0.0.css">
 </head>
 <body>
 <header id="blog-header">
@@ -26,14 +26,30 @@
 <pre><code>a, b = b, a</code></pre>
 <p>其实, 这里有一个隐晦的小问题. 考虑下边这段 Swift 代码:</p>
 <pre><code>(a, b) = (c, d)</code></pre>
-<p>它的访问顺序是 <code>c</code> → <code>d</code> → <code>a</code> → <code>b</code>. 在支持带副作用 (side effect) 的计算属性 (computed property) 的 Swift 中, 保证这个顺序是非常重要的.</p>
-<p>我不知道你有没有发现这个问题, 编译器不能直接把 <code>c</code> 赋给 <code>a</code>, 再把 <code>d</code> 赋给 <code>b</code>, 否则访问顺序就变成 <code>c</code> → <code>a</code> → <code>d</code> → <code>b</code> 了. 唯一可行的办法是创建两个临时变量 <code>e</code> 和 <code>f</code>, 将 <code>c</code> 放进 <code>e</code>, <code>d</code> 放进 <code>f</code>, 再将 <code>e</code> 放进 <code>a</code>, <code>f</code> 放进 <code>b</code>, 访问顺序是 <code>c</code> → <code>e</code> → <code>d</code> → <code>f</code> → <code>e</code> → <code>a</code> → <code>f</code> → <code>b</code>. 删掉其中的 <code>e</code> 和 <code>f</code> 后, 才刚好符合要求.</p>
-<p>不幸的是, 编译器常常没法优化掉这里的额外开销. 如果你肯用传统的办法交换对象, 或使用标准库内置的 <code>swap</code> 函数, 你可能只需要一个临时变量, 而不是两个:</p>
+<p>它的访问顺序是 <code>c</code> → <code>d</code> → <code>a</code> →
+<code>b</code>. 在支持带副作用 (side effect) 的计算属性 (computed
+property) 的 Swift 中, 保证这个顺序是非常重要的.</p>
+<p>我不知道你有没有发现这个问题, 编译器不能直接把 <code>c</code> 赋给
+<code>a</code>, 再把 <code>d</code> 赋给 <code>b</code>,
+否则访问顺序就变成 <code>c</code> → <code>a</code> → <code>d</code> →
+<code>b</code> 了. 唯一可行的办法是创建两个临时变量 <code>e</code> 和
+<code>f</code>, 将 <code>c</code> 放进 <code>e</code>, <code>d</code>
+放进 <code>f</code>, 再将 <code>e</code> 放进 <code>a</code>,
+<code>f</code> 放进 <code>b</code>, 访问顺序是 <code>c</code> →
+<code>e</code> → <code>d</code> → <code>f</code> → <code>e</code> →
+<code>a</code> → <code>f</code> → <code>b</code>. 删掉其中的
+<code>e</code> 和 <code>f</code> 后, 才刚好符合要求.</p>
+<p>不幸的是, 编译器常常没法优化掉这里的额外开销.
+如果你肯用传统的办法交换对象, 或使用标准库内置的 <code>swap</code> 函数,
+你可能只需要一个临时变量, 而不是两个:</p>
 <pre><code>let tmp = a
 a = b
 b = tmp</code></pre>
-<p>不要小看这个临时变量的开销喔, 如果你在写一个通用型数据结构, 不知道元素的大小, 还是考虑一下后者这种淳朴的写法叭! 当然, 如果只是普通场景, 怎么写都无所谓啦, 毕竟开心才最重要嘛.</p>
-<p>这是 Swift 标准库中 <code>MutableCollection</code> 的 <code>swapAt</code> 函数的实现:</p>
+<p>不要小看这个临时变量的开销喔, 如果你在写一个通用型数据结构,
+不知道元素的大小, 还是考虑一下后者这种淳朴的写法叭! 当然,
+如果只是普通场景, 怎么写都无所谓啦, 毕竟开心才最重要嘛.</p>
+<p>这是 Swift 标准库中 <code>MutableCollection</code> 的
+<code>swapAt</code> 函数的实现:</p>
 <pre><code>@inlinable
 public mutating func swapAt(_ i: Index, _ j: Index) {
     guard i != j else { return }
@@ -41,6 +57,9 @@ public mutating func swapAt(_ i: Index, _ j: Index) {
     self[i] = self[j]
     self[j] = tmp
 }</code></pre>
-<p><strong>思考题</strong>: 可以用 <code>swap(&amp;self[i], &amp;self[j])</code> 简化 <code>swapAt</code> 函数么? 为什么? 那 <code>(self[i], self[j]) = (self[j], self[i])</code> 呢? 上边提到的这几种写法之间有什么本质区别?</p>
+<p><strong>思考题</strong>: 可以用
+<code>swap(&amp;self[i], &amp;self[j])</code> 简化 <code>swapAt</code>
+函数么? 为什么? 那 <code>(self[i], self[j]) = (self[j], self[i])</code>
+呢? 上边提到的这几种写法之间有什么本质区别?</p>
 </body>
 </html>

@@ -15,30 +15,40 @@
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
 <link rel="manifest" href="../site.webmanifest">
 <link rel="stylesheet" href="../static/css/normalize-v8.0.1.css">
-<link rel="stylesheet" href="../static/css/kkshinkai-v10.0.2.css">
+<link rel="stylesheet" href="../static/css/kkshinkai-v11.0.0.css">
 </head>
 <body>
 <header id="blog-header">
 <a href="../index.html">&lsaquo; 回到主页</a> &nbsp;|&nbsp; <a href="./index.md">查看 Markdown 源码</a> &nbsp;|&nbsp; <a href="mailto:kkshinkai@kkshinkai.moe">邮件勘误</a>
 </header>
 <h1 id="妹之弦">妹之弦</h1>
-<p>字符串驻留 (string interning) 是项非常普遍的技术, 几乎所有的现代语言都有类似的优化. 之所以要把和这个所有人都知道的东西拿出来再说一遍, 只是因为我最近很喜欢 “妹之弦” 梗.</p>
+<p>字符串驻留 (string interning) 是项非常普遍的技术,
+几乎所有的现代语言都有类似的优化.
+之所以要把和这个所有人都知道的东西拿出来再说一遍, 只是因为我最近很喜欢
+“妹之弦” 梗.</p>
 <h2 id="いもうと">いもうと</h2>
-<p>在 Swift 的标准库实现中, 驻留的字符串被称为 “immortal (不朽的)”, 刚好和 “妹 (いもうと)” 同音, 而 “string” 则可以译为 “弦” (比如弦理论就是 string theory), 因此我就把字符串驻留称为 “妹之弦” 了.</p>
+<p>在 Swift 的标准库实现中, 驻留的字符串被称为 “immortal (不朽的)”,
+刚好和 “妹 (いもうと)” 同音, 而 “string” 则可以译为 “弦” (比如弦理论就是
+string theory), 因此我就把字符串驻留称为 “妹之弦” 了.</p>
 <h2 id="symbol">Symbol</h2>
 <p>妹之弦是一种让字符串拥有部分指针的性质的手段.</p>
-<p>以指针比较 (pointer comparison) 为例. 当你能保证一些值和指向它们的指针总能保持双射 (bijection) 关系时, 那判断这些值是否相等的过程就可以简化为对它们的指针的比较. 假设有如下三个字符串:</p>
+<p>以指针比较 (pointer comparison) 为例.
+当你能保证一些值和指向它们的指针总能保持双射 (bijection) 关系时,
+那判断这些值是否相等的过程就可以简化为对它们的指针的比较.
+假设有如下三个字符串:</p>
 <pre><code>const char *a = &quot;AAAAA&quot;;
 const char *b = &quot;BBBBB&quot;;
 const char *c = &quot;CCCCC&quot;;</code></pre>
-<p>判断两个长度为 <svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.395ex" height="1.676ex" style="vertical-align: -0.338ex;" viewBox="0 -576.1 600.5 721.6" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<p>判断两个长度为
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.395ex" height="1.676ex" style="vertical-align: -0.338ex;" viewBox="0 -576.1 600.5 721.6" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E1-MJMATHI-6E" d="M21 287Q22 293 24 303T36 341T56 388T89 425T135 442Q171 442 195 424T225 390T231 369Q231 367 232 367L243 378Q304 442 382 442Q436 442 469 415T503 336T465 179T427 52Q427 26 444 26Q450 26 453 27Q482 32 505 65T540 145Q542 153 560 153Q580 153 580 145Q580 144 576 130Q568 101 554 73T508 17T439 -10Q392 -10 371 17T350 73Q350 92 386 193T423 345Q423 404 379 404H374Q288 404 229 303L222 291L189 157Q156 26 151 16Q138 -11 108 -11Q95 -11 87 -5T76 7T74 17Q74 30 112 180T152 343Q153 348 153 366Q153 405 129 405Q91 405 66 305Q60 285 60 284Q58 278 41 278H27Q21 284 21 287Z"></path>
 </defs>
 <g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)">
  <use xlink:href="#E1-MJMATHI-6E" x="0" y="0"></use>
 </g>
-</svg> 的字符串是否相等的普适算法的复杂度是 <svg xmlns:xlink="http://www.w3.org/1999/xlink" width="4.977ex" height="2.843ex" style="vertical-align: -0.838ex;" viewBox="0 -863.1 2143 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+</svg> 的字符串是否相等的普适算法的复杂度是
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="4.977ex" height="2.843ex" style="vertical-align: -0.838ex;" viewBox="0 -863.1 2143 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E2-MJMATHI-4F" d="M740 435Q740 320 676 213T511 42T304 -22Q207 -22 138 35T51 201Q50 209 50 244Q50 346 98 438T227 601Q351 704 476 704Q514 704 524 703Q621 689 680 617T740 435ZM637 476Q637 565 591 615T476 665Q396 665 322 605Q242 542 200 428T157 216Q157 126 200 73T314 19Q404 19 485 98T608 313Q637 408 637 476Z"></path>
 <path stroke-width="1" id="E2-MJMAIN-28" d="M94 250Q94 319 104 381T127 488T164 576T202 643T244 695T277 729T302 750H315H319Q333 750 333 741Q333 738 316 720T275 667T226 581T184 443T167 250T184 58T225 -81T274 -167T316 -220T333 -241Q333 -250 318 -250H315H302L274 -226Q180 -141 137 -14T94 250Z"></path>
@@ -58,7 +68,12 @@ const char *c = &quot;CCCCC&quot;;</code></pre>
             return true;
     return false;
 }</code></pre>
-<p>但如果仅考虑 Pointer = {<code>a</code>, <code>b</code>, <code>c</code>}, 它们和 String = {<code>"AAAAA"</code>, <code>"BBBBB"</code>, <code>"CCCCC"</code>} 保持双射关系, 可以作为后者的索引族 (indexed family). 因此, 比较字符串相等性的工作就可以简化为比较指针的相等性了, 复杂度是 <svg xmlns:xlink="http://www.w3.org/1999/xlink" width="4.745ex" height="2.843ex" style="vertical-align: -0.838ex;" viewBox="0 -863.1 2043 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<p>但如果仅考虑 Pointer = {<code>a</code>, <code>b</code>,
+<code>c</code>}, 它们和 String = {<code>"AAAAA"</code>,
+<code>"BBBBB"</code>, <code>"CCCCC"</code>} 保持双射关系,
+可以作为后者的索引族 (indexed family). 因此,
+比较字符串相等性的工作就可以简化为比较指针的相等性了, 复杂度是
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="4.745ex" height="2.843ex" style="vertical-align: -0.838ex;" viewBox="0 -863.1 2043 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E3-MJMATHI-4F" d="M740 435Q740 320 676 213T511 42T304 -22Q207 -22 138 35T51 201Q50 209 50 244Q50 346 98 438T227 601Q351 704 476 704Q514 704 524 703Q621 689 680 617T740 435ZM637 476Q637 565 591 615T476 665Q396 665 322 605Q242 542 200 428T157 216Q157 126 200 73T314 19Q404 19 485 98T608 313Q637 408 637 476Z"></path>
 <path stroke-width="1" id="E3-MJMAIN-28" d="M94 250Q94 319 104 381T127 488T164 576T202 643T244 695T277 729T302 750H315H319Q333 750 333 741Q333 738 316 720T275 667T226 581T184 443T167 250T184 58T225 -81T274 -167T316 -220T333 -241Q333 -250 318 -250H315H302L274 -226Q180 -141 137 -14T94 250Z"></path>
@@ -75,16 +90,22 @@ const char *c = &quot;CCCCC&quot;;</code></pre>
 <pre><code>bool is_equal(const char *s1, const char *s2) {
     return s1 == s2;
 }</code></pre>
-<p>对于编译期已知的静态字符串, 它们会被放在文字常量区 (literal constant area) 里, 编译器不会重复存储它们.</p>
+<p>对于编译期已知的静态字符串, 它们会被放在文字常量区 (literal constant
+area) 里, 编译器不会重复存储它们.</p>
 <pre><code>const char *a = &quot;AAAAAAAAAA&quot;;
 const char *b = &quot;AAAAAAAAAA&quot;;
 
 printf(&quot;%p, %p\n&quot;, a, b); // Print &quot;0x100003f9a, 0x100003f9a&quot;</code></pre>
-<p>换句话说, 在一些动态语言里, 如果你使用字符串充当枚举 (enumeration), 性能并不会因此而打折扣.</p>
+<p>换句话说, 在一些动态语言里, 如果你使用字符串充当枚举 (enumeration),
+性能并不会因此而打折扣.</p>
 <pre><code>let fruit = { type: &quot;apple&quot;, ... }
 if (fruit.type == &quot;apple&quot; || fruit.type == &quot;orange&quot;) // 和枚举类型一样高效
     do something ...</code></pre>
-<p>这就是 Lisp (以及 Erlang, Elixir, Ruby) 里 symbol 的本质, 虚拟机会维护一个字符串驻留池 (string intern pool), 不管是调用 <code>symbol-&gt;string</code> 和 <code>string-&gt;symbol</code>, 还是享受 <svg xmlns:xlink="http://www.w3.org/1999/xlink" width="4.745ex" height="2.843ex" style="vertical-align: -0.838ex;" viewBox="0 -863.1 2043 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<p>这就是 Lisp (以及 Erlang, Elixir, Ruby) 里 symbol 的本质,
+虚拟机会维护一个字符串驻留池 (string intern pool), 不管是调用
+<code>symbol-&gt;string</code> 和 <code>string-&gt;symbol</code>,
+还是享受
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="4.745ex" height="2.843ex" style="vertical-align: -0.838ex;" viewBox="0 -863.1 2043 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E4-MJMATHI-4F" d="M740 435Q740 320 676 213T511 42T304 -22Q207 -22 138 35T51 201Q50 209 50 244Q50 346 98 438T227 601Q351 704 476 704Q514 704 524 703Q621 689 680 617T740 435ZM637 476Q637 565 591 615T476 665Q396 665 322 605Q242 542 200 428T157 216Q157 126 200 73T314 19Q404 19 485 98T608 313Q637 408 637 476Z"></path>
 <path stroke-width="1" id="E4-MJMAIN-28" d="M94 250Q94 319 104 381T127 488T164 576T202 643T244 695T277 729T302 750H315H319Q333 750 333 741Q333 738 316 720T275 667T226 581T184 443T167 250T184 58T225 -81T274 -167T316 -220T333 -241Q333 -250 318 -250H315H302L274 -226Q180 -141 137 -14T94 250Z"></path>

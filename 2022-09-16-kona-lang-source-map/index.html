@@ -15,17 +15,24 @@
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
 <link rel="manifest" href="../site.webmanifest">
 <link rel="stylesheet" href="../static/css/normalize-v8.0.1.css">
-<link rel="stylesheet" href="../static/css/kkshinkai-v10.0.2.css">
+<link rel="stylesheet" href="../static/css/kkshinkai-v11.0.0.css">
 </head>
 <body>
 <header id="blog-header">
 <a href="../index.html">&lsaquo; 回到主页</a> &nbsp;|&nbsp; <a href="./index.md">查看 Markdown 源码</a> &nbsp;|&nbsp; <a href="mailto:kkshinkai@kkshinkai.moe">邮件勘误</a>
 </header>
 <h1 id="kona-杂记一-源码管理器">Kona 杂记一: 源码管理器</h1>
-<p>Kona 是我最近正在实现的语言, 在计划中它是一门 ML 家族的方言, 语法和 Standard ML 类似. 不过截止到目前, 我连很多基础的设定都没有想好, 所以这里就不花篇幅介绍了, 你只需要知道 “Konac” 是一个编译器/解释器就好. 这篇文章讲的是它的源码管理器和诊断引擎的实现.</p>
-<p>Konac 的源码管理器是 Rustc 源码管理器的一个修改版本, 如果你了解 Rustc 的实现 (或对 Rustc 感兴趣), 也可以参照 <a href="https://doc.rust-lang.org/beta/nightly-rustc/rustc_span/index.html">rustc_span</a> 模块的源码来阅读本文.</p>
+<p>Kona 是我最近正在实现的语言, 在计划中它是一门 ML 家族的方言, 语法和
+Standard ML 类似. 不过截止到目前, 我连很多基础的设定都没有想好,
+所以这里就不花篇幅介绍了, 你只需要知道 “Konac” 是一个编译器/解释器就好.
+这篇文章讲的是它的源码管理器和诊断引擎的实现.</p>
+<p>Konac 的源码管理器是 Rustc 源码管理器的一个修改版本, 如果你了解 Rustc
+的实现 (或对 Rustc 感兴趣), 也可以参照 <a
+href="https://doc.rust-lang.org/beta/nightly-rustc/rustc_span/index.html">rustc_span</a>
+模块的源码来阅读本文.</p>
 <h2 id="源码管理器">源码管理器</h2>
-<p>考虑一下, 如果想要输出像 Rustc 这样的漂亮的诊断信息, 我们都需要知道什么?</p>
+<p>考虑一下, 如果想要输出像 Rustc 这样的漂亮的诊断信息,
+我们都需要知道什么?</p>
 <pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(241, 76, 76)">error[E0277]</strong>: cannot add `&str` to `{integer}`
 <strong style="color:rgb(41, 184, 219)"> --&gt;</strong> src/main.rs:2:15
 <strong style="color:rgb(41, 184, 219)">  |</strong>
@@ -37,13 +44,26 @@
 <p>有几个显而易见的答案:</p>
 <ol type="1">
 <li>我们需要知道发生错误的源文件的名字 (<code>src/main.rs</code>);</li>
-<li>我们需要知道错误发生在哪一行 (<code>2</code>) 哪一列 (<code>15</code>);</li>
-<li>我们需要知道发生错误的那一行的全部源码 (<code>"    let x = 1 + \"one\";"</code>);</li>
+<li>我们需要知道错误发生在哪一行 (<code>2</code>) 哪一列
+(<code>15</code>);</li>
+<li>我们需要知道发生错误的那一行的全部源码 (<code>"    let x = 1 +
+\"one\";"</code>);</li>
 </ol>
-<p>在 Kona 的语法树中, 每个词元 (token) 乃至语法节点 (node), 都需要一对这样的位置信息来表示它们的起止位置. 直接存储这些信息会造成巨大的空间浪费, 因此我们需要一个缓存机制, 在让我们能用更小巧的方式来定位源码的同时, 也能提供完整的位置信息, 这就是源码管理器啦!</p>
-<p>源码管理器会给每个位置分配一个全局唯一的整数 <code>Pos(u32)</code>, 源码管理器能以较小的开销查询到一个 <code>Pos(u32)</code> 对应的文件名、行号、列号等信息. 类似地, <code>Span(u32..u32)</code> 是由一对 <code>Pos</code> 组成的 (左闭右开) 区间, 你可以通过源码管理器获取这个区间对应的源码.</p>
+<p>在 Kona 的语法树中, 每个词元 (token) 乃至语法节点 (node),
+都需要一对这样的位置信息来表示它们的起止位置.
+直接存储这些信息会造成巨大的空间浪费, 因此我们需要一个缓存机制,
+在让我们能用更小巧的方式来定位源码的同时, 也能提供完整的位置信息,
+这就是源码管理器啦!</p>
+<p>源码管理器会给每个位置分配一个全局唯一的整数 <code>Pos(u32)</code>,
+源码管理器能以较小的开销查询到一个 <code>Pos(u32)</code>
+对应的文件名、行号、列号等信息. 类似地, <code>Span(u32..u32)</code>
+是由一对 <code>Pos</code> 组成的 (左闭右开) 区间,
+你可以通过源码管理器获取这个区间对应的源码.</p>
 <p><img src="images/source-manager.jpg" /></p>
-<p>在 Konac 中, 源码管理器所需的一切信息, 都被保存在一个叫做 <code>SourceMap</code> 的结构体中. 如果把 <code>SourceMap</code> 比作一个巨大的, 横跨多个文件的字符串, 那 <code>Pos</code> 就是这个字符串的索引.</p>
+<p>在 Konac 中, 源码管理器所需的一切信息, 都被保存在一个叫做
+<code>SourceMap</code> 的结构体中. 如果把 <code>SourceMap</code>
+比作一个巨大的, 横跨多个文件的字符串, 那 <code>Pos</code>
+就是这个字符串的索引.</p>
 <pre><code>source_map.query_info(pos)
 =&gt; PosInfo {
        file_name: &quot;src/main.rs&quot;,
@@ -61,7 +81,11 @@ source_map.query_column(pos)
 source_map.query_source(start..end)
 =&gt; &quot;    let x = 1 + \&quot;one\&quot;&quot;</code></pre>
 <h2 id="在多个源文件中查询">在多个源文件中查询</h2>
-<p><code>SourceMap</code> 可能会读取多个源文件, 由于我们希望 <code>Pos</code> 是全局唯一的, 所以每个源文件都需要被分配一段独立的, 互不相交的区间, 这个区间的长度应该恰好等于这个文件的长度. 假设有三个源文件, 长度分别为 100, 200, 300, 那么读取后, <code>SourceMap</code> 应该大致是这样的:</p>
+<p><code>SourceMap</code> 可能会读取多个源文件, 由于我们希望
+<code>Pos</code> 是全局唯一的, 所以每个源文件都需要被分配一段独立的,
+互不相交的区间, 这个区间的长度应该恰好等于这个文件的长度.
+假设有三个源文件, 长度分别为 100, 200, 300, 那么读取后,
+<code>SourceMap</code> 应该大致是这样的:</p>
 <pre><code>SourceMap {
     source_files: [
         SourceFile {
@@ -78,15 +102,31 @@ source_map.query_source(start..end)
         },
     ],
 }</code></pre>
-<p>当我们拿到 <code>Pos(121)</code> 时, 可以查询到, 这个源码在 <code>src/test1.kona</code> 文件中, 是第 21 个字符.</p>
-<p>上述的查询过程可以使用二分查找, 只要保证 <code>source_files</code> 按照 <code>span</code> 的起始位置来排序即可. Rust 的标准库提供了一个非常好用的函数 <a href="https://doc.rust-lang.org/std/primitive.slice.html#method.binary_search_by_key"><code>binary_search_by_key</code></a>, 你可以使用 <code>file.span.start</code> 作为键 (key), 来搜索包含 <code>pos</code> 的 <code>SourceFile</code>.</p>
+<p>当我们拿到 <code>Pos(121)</code> 时, 可以查询到, 这个源码在
+<code>src/test1.kona</code> 文件中, 是第 21 个字符.</p>
+<p>上述的查询过程可以使用二分查找, 只要保证 <code>source_files</code>
+按照 <code>span</code> 的起始位置来排序即可. Rust
+的标准库提供了一个非常好用的函数 <a
+href="https://doc.rust-lang.org/std/primitive.slice.html#method.binary_search_by_key"><code>binary_search_by_key</code></a>,
+你可以使用 <code>file.span.start</code> 作为键 (key), 来搜索包含
+<code>pos</code> 的 <code>SourceFile</code>.</p>
 <ul>
-<li>当 <code>pos</code> 恰好和 <code>source_files</code> 中某个文件的 <code>file.span.start</code> 相等时, <code>binary_search_by_key</code> 会返回 <code>Ok(index)</code>, 此时 <code>pos</code> 就是 <code>index</code> 索引的文件的第一个字符;</li>
-<li>当 <code>pos</code> 不和任何一个文件的 <code>file.span.start</code> 相等时, <code>binary_search_by_key</code> 会返回 <code>Err(index)</code>, 此时 <code>index</code> 是 <code>pos</code> 按顺序应该被插入的位置, 而这个位置的前边, 就应该是包含 <code>pos</code> 的文件;</li>
+<li>当 <code>pos</code> 恰好和 <code>source_files</code> 中某个文件的
+<code>file.span.start</code> 相等时, <code>binary_search_by_key</code>
+会返回 <code>Ok(index)</code>, 此时 <code>pos</code> 就是
+<code>index</code> 索引的文件的第一个字符;</li>
+<li>当 <code>pos</code> 不和任何一个文件的 <code>file.span.start</code>
+相等时, <code>binary_search_by_key</code> 会返回
+<code>Err(index)</code>, 此时 <code>index</code> 是 <code>pos</code>
+按顺序应该被插入的位置, 而这个位置的前边, 就应该是包含 <code>pos</code>
+的文件;</li>
 </ul>
 <p>整个源码管理器实现, 都是建立在二分查找这个非常简单的算法之上的.</p>
 <h2 id="行数查询">行数查询</h2>
-<p>按照同样的思路, 我们很容易就可以设计出查找一个 <code>Pos</code> 在第几行的设施. 在 <code>SourceFile</code> 中新增一个 <code>line_starts</code> 字段, 缓存每一行的起始位置. 查询的算法和文件查询完全相同, 这里就不再重复了.</p>
+<p>按照同样的思路, 我们很容易就可以设计出查找一个 <code>Pos</code>
+在第几行的设施. 在 <code>SourceFile</code> 中新增一个
+<code>line_starts</code> 字段, 缓存每一行的起始位置.
+查询的算法和文件查询完全相同, 这里就不再重复了.</p>
 <pre><code>SourceFile {
     path: &quot;src/main.kona&quot;,
     span: 1...101,
@@ -95,34 +135,48 @@ source_map.query_source(start..end)
 
 source_file.query_line(Pos(34))
 =&gt; 4</code></pre>
-<p>现在我们的 <code>SourceMap</code> 已经可以根据 <code>Pos</code> 找到指定的源文件和行数了. 实际上, 如果你的语言只支持 ASCII 字符, 这个 <code>SourceMap</code> 完全可以满足你的基本需求. 但是, 如果 Unicode 字符也在你的计划在内, 痛苦就随之而来了.</p>
+<p>现在我们的 <code>SourceMap</code> 已经可以根据 <code>Pos</code>
+找到指定的源文件和行数了. 实际上, 如果你的语言只支持 ASCII 字符, 这个
+<code>SourceMap</code> 完全可以满足你的基本需求. 但是, 如果 Unicode
+字符也在你的计划在内, 痛苦就随之而来了.</p>
 <h2 id="列数查询">列数查询</h2>
-<p>现在, 我们回顾一下文章最开始的 Rust 诊断信息, 但把 <code>x</code> 换成 <code>λ</code>:</p>
+<p>现在, 我们回顾一下文章最开始的 Rust 诊断信息, 但把 <code>x</code>
+换成 <code>λ</code>:</p>
 <pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
 <strong style="color:rgb(41, 184, 219)">2 |</strong>     let λ = 1 + "one";
 <strong style="color:rgb(41, 184, 219)">  |</strong>               <strong style="color:rgb(241, 76, 76)">^ no implementation for `{integer} + &str`</strong>
 <strong style="color:rgb(41, 184, 219)">  |</strong>
 </code></pre>
-<p>思考一下, 这个红色的下划线 <code><strong style="color:rgb(241, 76, 76)">^</strong></code> 是如何实现的?</p>
-<p>看起来, 我们只需要知道这个 <code>Pos</code> 对应的列数, 就能实现这个效果了. 思路也没什么新意, 先找到这个 <code>Pos</code> 所在的行, 进而找到这一行的起始位置, 然后用 <code>Pos</code> 减去起始位置, 就可以得到这个 <code>Pos</code> 在这一行的列数了.</p>
+<p>思考一下, 这个红色的下划线
+<code><strong style="color:rgb(241, 76, 76)">^</strong></code>
+是如何实现的?</p>
+<p>看起来, 我们只需要知道这个 <code>Pos</code> 对应的列数,
+就能实现这个效果了. 思路也没什么新意, 先找到这个 <code>Pos</code>
+所在的行, 进而找到这一行的起始位置, 然后用 <code>Pos</code>
+减去起始位置, 就可以得到这个 <code>Pos</code> 在这一行的列数了.</p>
 <pre><code>source_file.query_column(pos)
 =&gt; 16</code></pre>
 <p>但是, 非常不幸, 这个结果是错的.</p>
-<p>为了保留对源码随机访问 (random access) 的能力, <code>Pos(u32)</code> 中的无符号数实际上是带偏移量的字节索引. 例如, 对于如下的文件:</p>
+<p>为了保留对源码随机访问 (random access) 的能力, <code>Pos(u32)</code>
+中的无符号数实际上是带偏移量的字节索引. 例如, 对于如下的文件:</p>
 <pre><code>SourceFile {
     src: &quot;fn main() {\n    let λ = 1 + \&quot;one\&quot;;\n}\n&quot;,
     span: start_pos..end_pos,
     ..
 }</code></pre>
-<p>某个 <code>pos</code> 位置处的字节是 <code>src[pos - start_pos]</code>.</p>
-<p>而由于 UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点 (code point) 可能需要由多个连续的字节来表示. 当你读取一个字符串的第 <svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.395ex" height="1.676ex" style="vertical-align: -0.338ex;" viewBox="0 -576.1 600.5 721.6" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<p>某个 <code>pos</code> 位置处的字节是
+<code>src[pos - start_pos]</code>.</p>
+<p>而由于 UTF-8 (或 UTF-16) 是变长 (variable-width) 字符编码, 一个码点
+(code point) 可能需要由多个连续的字节来表示. 当你读取一个字符串的第
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.395ex" height="1.676ex" style="vertical-align: -0.338ex;" viewBox="0 -576.1 600.5 721.6" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E1-MJMATHI-6E" d="M21 287Q22 293 24 303T36 341T56 388T89 425T135 442Q171 442 195 424T225 390T231 369Q231 367 232 367L243 378Q304 442 382 442Q436 442 469 415T503 336T465 179T427 52Q427 26 444 26Q450 26 453 27Q482 32 505 65T540 145Q542 153 560 153Q580 153 580 145Q580 144 576 130Q568 101 554 73T508 17T439 -10Q392 -10 371 17T350 73Q350 92 386 193T423 345Q423 404 379 404H374Q288 404 229 303L222 291L189 157Q156 26 151 16Q138 -11 108 -11Q95 -11 87 -5T76 7T74 17Q74 30 112 180T152 343Q153 348 153 366Q153 405 129 405Q91 405 66 305Q60 285 60 284Q58 278 41 278H27Q21 284 21 287Z"></path>
 </defs>
 <g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)">
  <use xlink:href="#E1-MJMATHI-6E" x="0" y="0"></use>
 </g>
-</svg> 个字节时, 你读到的不一定是第 <svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.395ex" height="1.676ex" style="vertical-align: -0.338ex;" viewBox="0 -576.1 600.5 721.6" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+</svg> 个字节时, 你读到的不一定是第
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.395ex" height="1.676ex" style="vertical-align: -0.338ex;" viewBox="0 -576.1 600.5 721.6" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E2-MJMATHI-6E" d="M21 287Q22 293 24 303T36 341T56 388T89 425T135 442Q171 442 195 424T225 390T231 369Q231 367 232 367L243 378Q304 442 382 442Q436 442 469 415T503 336T465 179T427 52Q427 26 444 26Q450 26 453 27Q482 32 505 65T540 145Q542 153 560 153Q580 153 580 145Q580 144 576 130Q568 101 554 73T508 17T439 -10Q392 -10 371 17T350 73Q350 92 386 193T423 345Q423 404 379 404H374Q288 404 229 303L222 291L189 157Q156 26 151 16Q138 -11 108 -11Q95 -11 87 -5T76 7T74 17Q74 30 112 180T152 343Q153 348 153 366Q153 405 129 405Q91 405 66 305Q60 285 60 284Q58 278 41 278H27Q21 284 21 287Z"></path>
 </defs>
@@ -135,8 +189,15 @@ source_file.query_line(Pos(34))
 <strong style="color:rgb(41, 184, 219)">  |</strong>               <strong style="color:rgb(241, 76, 76)">^ no implementation for `{integer} + &str`</strong>
 <strong style="color:rgb(41, 184, 219)">  |</strong>
 </code></pre>
-<p>在这个例子中, <code>+</code> 的位置是 <code>Pos(28)</code>, 而这一行的起始位置是 <code>Pos(13)</code>, 如果简单地做差, 可以计算出 <code>+</code> 在这一行的列数是 16 (由于列数是从 1 开始的, 这个值应该是 <code>28 - 13 + 1 = 16</code>). 但实际上, <code>+</code> 在第 15 列. <code>λ</code> (U+03BB) 在 UTF-8 编码中需要用两个码元 <code>0xCE 0xBB</code> 来表示, 在计算中, 它错误地占了两个位置.</p>
-<p>为了避免多字节字符造成的影响, 我们需要在 <code>SourceFile</code> 中再增加一个新字段 <code>multi_byte_chars</code>, 用来缓存这个文件中所有多字节字符的起始位置和它们占用的字节数量.</p>
+<p>在这个例子中, <code>+</code> 的位置是 <code>Pos(28)</code>,
+而这一行的起始位置是 <code>Pos(13)</code>, 如果简单地做差, 可以计算出
+<code>+</code> 在这一行的列数是 16 (由于列数是从 1 开始的, 这个值应该是
+<code>28 - 13 + 1 = 16</code>). 但实际上, <code>+</code> 在第 15 列.
+<code>λ</code> (U+03BB) 在 UTF-8 编码中需要用两个码元
+<code>0xCE 0xBB</code> 来表示, 在计算中, 它错误地占了两个位置.</p>
+<p>为了避免多字节字符造成的影响, 我们需要在 <code>SourceFile</code>
+中再增加一个新字段 <code>multi_byte_chars</code>,
+用来缓存这个文件中所有多字节字符的起始位置和它们占用的字节数量.</p>
 <pre><code>struct SourceFile {
     multi_byte_chars: Vec&lt;MultiByteChar&gt;,
     ..
@@ -149,18 +210,31 @@ struct MultiByteChar {
     // only be 2, 3 or 4.
     len: u8,
 }</code></pre>
-<p>在 <code>multi_byte_chars</code> 中, <code>MultiByteChar</code> 会根据 <code>pos</code> 排序, 在已知某行起始位置的情况下, 只需要遍历这一行中, <code>pos</code> 小于指定位置的 <code>MultiByteChar</code>, 然后将它们的 <code>len</code> 加起来, 就可以得到计算列数中的误差值. 减掉它之后, 列数终于是正确的了.</p>
+<p>在 <code>multi_byte_chars</code> 中, <code>MultiByteChar</code>
+会根据 <code>pos</code> 排序, 在已知某行起始位置的情况下,
+只需要遍历这一行中, <code>pos</code> 小于指定位置的
+<code>MultiByteChar</code>, 然后将它们的 <code>len</code> 加起来,
+就可以得到计算列数中的误差值. 减掉它之后, 列数终于是正确的了.</p>
 <pre><code>source_file.query_column(pos)
 =&gt; 15</code></pre>
 <h2 id="显示列数查询">显示列数查询</h2>
-<p>截止到这里, 我们已经能够获取正确的列数了, 但这个列数只能用于文本编辑器中的错误提示, 而不能用在终端中. 稍微修改一下之前的例子:</p>
+<p>截止到这里, 我们已经能够获取正确的列数了,
+但这个列数只能用于文本编辑器中的错误提示, 而不能用在终端中.
+稍微修改一下之前的例子:</p>
 <pre style="padding: .5em; border-radius: .5em;"><code><strong style="color:rgb(41, 184, 219)">  |</strong>
 <strong style="color:rgb(41, 184, 219)">2 |</strong>     let <span style="font-size: 0.8em">⛵️</span> = 1 + "one";
 <strong style="color:rgb(41, 184, 219)">  |</strong>                <strong style="color:rgb(241, 76, 76)">^ no implementation for `{integer} + &str`</strong>
 <strong style="color:rgb(41, 184, 219)">  |</strong>
 </code></pre>
-<p>加号 <code>+</code> 在第 15 列, 这是毫无疑问的, 但这个红色的下划线 <code><strong style="color:rgb(241, 76, 76)">^</strong></code> 其实在第 16 列, 因为 ⛵️ 在显示上占了两个英文字符的宽度. 除了常见的东亚字符和 emoji, Unicode 字符集中很多字符的显示宽度都是 2, 还有些字符的显示宽度是 0, 而 Tab 则需要 4 个空格的位置. 为了解决这个问题, 位置信息不仅需要提供一个普通的列数 (<code>column</code>), 还需要支持显示列数 (<code>display_column</code>).</p>
-<p>这一次, <code>SourceFile</code> 又需要增加新字段 <code>non_narrow_chars</code>, 用于保存那些显示宽度不为 1 的字符:</p>
+<p>加号 <code>+</code> 在第 15 列, 这是毫无疑问的, 但这个红色的下划线
+<code><strong style="color:rgb(241, 76, 76)">^</strong></code> 其实在第
+16 列, 因为 ⛵️ 在显示上占了两个英文字符的宽度. 除了常见的东亚字符和
+emoji, Unicode 字符集中很多字符的显示宽度都是 2, 还有些字符的显示宽度是
+0, 而 Tab 则需要 4 个空格的位置. 为了解决这个问题,
+位置信息不仅需要提供一个普通的列数 (<code>column</code>),
+还需要支持显示列数 (<code>display_column</code>).</p>
+<p>这一次, <code>SourceFile</code> 又需要增加新字段
+<code>non_narrow_chars</code>, 用于保存那些显示宽度不为 1 的字符:</p>
 <pre><code>struct SourceFile {
     non_narrow_chars: Vec&lt;NonNarrowChar&gt;,
     ..
@@ -176,10 +250,25 @@ enum NonNarrowCharKind {
     Wide,      // A full-width character.
     Tab,       // A tab, treated as four spaces.
 }</code></pre>
-<p>字符的显示宽度可以通过 Unicode Standard Annex #11 <a href="https://www.unicode.org/reports/tr11/">East Asian Width</a> 来获取, 在 Rust 里, 你可以使用 <a href="https://crates.io/crates/unicode-width">unicode-width</a> 这个包.</p>
+<p>字符的显示宽度可以通过 Unicode Standard Annex #11 <a
+href="https://www.unicode.org/reports/tr11/">East Asian Width</a>
+来获取, 在 Rust 里, 你可以使用 <a
+href="https://crates.io/crates/unicode-width">unicode-width</a>
+这个包.</p>
 <h2 id="源码常规化">源码常规化</h2>
-<p>在 Konac 中, <code>SourceMap</code> 中以字符串的形式存储在了整个编译单元中所有的源码, 这并不是什么好事, 但其实也无伤大雅啦. 如果你使用的是 C 或 C++ 这样的语言, 给 <code>SourceMap</code> 增加内存映射 (memory mapping) 支持也不是什么难事.</p>
-<p>在这种条件下, 我们可以开始着手解决最后的一点小问题了. 熟悉 Git 的人应该知道, Git 会为文件自动匹配适应于当前操作系统的换行符. 在 Linux 下, 以 LF (即 <code>\n</code>) 换行的文件在同步到 Windows 上后, 如果未经特殊设置, 会自动转为以 CRLF (即 <code>\r\n</code>) 换行的文件, 这两种换行的字符数量并不相同. 于是就引出了一个问题, 同一份源码, 在不同操作系统下解析出来的语法树, 其位置信息会略有差别. 如果我们想要抹平这种差异, 就需要给 <code>SourceFile</code> 再添一个新字段 <code>normalized_pos</code> 了:</p>
+<p>在 Konac 中, <code>SourceMap</code>
+中以字符串的形式存储在了整个编译单元中所有的源码, 这并不是什么好事,
+但其实也无伤大雅啦. 如果你使用的是 C 或 C++ 这样的语言, 给
+<code>SourceMap</code> 增加内存映射 (memory mapping)
+支持也不是什么难事.</p>
+<p>在这种条件下, 我们可以开始着手解决最后的一点小问题了. 熟悉 Git
+的人应该知道, Git 会为文件自动匹配适应于当前操作系统的换行符. 在 Linux
+下, 以 LF (即 <code>\n</code>) 换行的文件在同步到 Windows 上后,
+如果未经特殊设置, 会自动转为以 CRLF (即 <code>\r\n</code>) 换行的文件,
+这两种换行的字符数量并不相同. 于是就引出了一个问题, 同一份源码,
+在不同操作系统下解析出来的语法树, 其位置信息会略有差别.
+如果我们想要抹平这种差异, 就需要给 <code>SourceFile</code>
+再添一个新字段 <code>normalized_pos</code> 了:</p>
 <pre><code>struct SourceFile {
     normalized_pos: Vec&lt;NormalizedPos&gt;,
     ..
@@ -189,14 +278,25 @@ struct NormalizedPos {
     pos: Pos
     diff: u32
 }</code></pre>
-<p>之前的操作中, 我们都只是在解析并缓存源码的相关信息, 没有对源码本身做改动. 而这一次, 我们会对源码进行一些修改, 这也是为什么我在上文要强调 <code>SourceMap</code> 拥有以字符串形式存储的所有源码.</p>
+<p>之前的操作中, 我们都只是在解析并缓存源码的相关信息,
+没有对源码本身做改动. 而这一次, 我们会对源码进行一些修改,
+这也是为什么我在上文要强调 <code>SourceMap</code>
+拥有以字符串形式存储的所有源码.</p>
 <ul>
-<li>UTF-8 BOM (即 <code>0xEF 0xBB 0xBF</code>) 会被删除, 每次删除会导致差异 <code>diff</code> 增加 3;</li>
-<li>源码中的 <code>\r\n</code> 会被转换为 <code>\n</code>, 每次转换会导致差异 <code>diff</code> 增加 1;</li>
+<li>UTF-8 BOM (即 <code>0xEF 0xBB 0xBF</code>) 会被删除,
+每次删除会导致差异 <code>diff</code> 增加 3;</li>
+<li>源码中的 <code>\r\n</code> 会被转换为 <code>\n</code>,
+每次转换会导致差异 <code>diff</code> 增加 1;</li>
 </ul>
-<p>当 <code>normalized_pos</code> 尾部添加新 <code>NormalizedPos</code> 时, 它的 <code>diff</code> 值会根据当前 <code>normalized_pos</code> 末尾的 <code>diff</code> 值进行迭加. 如果我们需要获取某个 <code>Pos</code> 在源文件中最原始的位置, 只需要找到这个位置的上一个偏移点, 并使用这个 <code>diff</code> 值加以修正就好了.</p>
+<p>当 <code>normalized_pos</code> 尾部添加新 <code>NormalizedPos</code>
+时, 它的 <code>diff</code> 值会根据当前 <code>normalized_pos</code>
+末尾的 <code>diff</code> 值进行迭加. 如果我们需要获取某个
+<code>Pos</code> 在源文件中最原始的位置,
+只需要找到这个位置的上一个偏移点, 并使用这个 <code>diff</code>
+值加以修正就好了.</p>
 <h2 id="终了">终了</h2>
-<p>经过上边的重重工序, 我们的 <code>SourceFile</code> 已经变得很复杂了:</p>
+<p>经过上边的重重工序, 我们的 <code>SourceFile</code>
+已经变得很复杂了:</p>
 <pre><code>struct SourceFile {
     name: SourcePath,
     src: String,
@@ -207,8 +307,10 @@ struct NormalizedPos {
     normalized_pos: Vec&lt;NormalizedPos&gt;,
     ..
 }</code></pre>
-<p>在第一次读入源字符串时, 我们需要解析并缓存所有的这些内容, 虽然没有什么难度, 但实现起还是有点恼人的.</p>
-<p>不论如何, 终于, 我们可以用 <code>SourceMap</code> 正确、高效地查询源码的位置信息了!</p>
+<p>在第一次读入源字符串时, 我们需要解析并缓存所有的这些内容,
+虽然没有什么难度, 但实现起还是有点恼人的.</p>
+<p>不论如何, 终于, 我们可以用 <code>SourceMap</code>
+正确、高效地查询源码的位置信息了!</p>
 <pre><code>source_map.query_info(pos)
 =&gt; PosInfo {
        file_name: &quot;src/main.rs&quot;,
